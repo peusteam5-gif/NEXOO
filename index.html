@@ -661,15 +661,18 @@ overflow: hidden; animation: fadeUp 0.2s ease both;
 </head>
 <body>
 <script>
-// Fallback: force hide loading screen after 6s no matter what
+// Fallback: force hide loading screen after 8s only if still showing
 setTimeout(() => {
   const ls = document.getElementById('loading-screen');
-  if (ls) ls.style.display = 'none';
-  if (!document.getElementById('app').style.display || document.getElementById('app').style.display === 'none') {
-    const lp = document.getElementById('page-login');
-    if (lp) lp.classList.add('active');
+  if (ls && ls.style.display !== 'none') {
+    ls.style.display = 'none';
+    const app = document.getElementById('app');
+    if (!app || app.style.display === 'none' || !app.style.display) {
+      const lp = document.getElementById('page-login');
+      if (lp) lp.classList.add('active');
+    }
   }
-}, 6000);
+}, 8000);
 </script>
 
 <div id="loading-screen">
@@ -997,6 +1000,56 @@ Publicar vídeo
 <div style="font-size:32px;">⭐</div>
 <div style="font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--text);">Oportunidades — em breve</div>
 <div style="font-size:13px;color:var(--muted);">Esta seção será conectada ao banco de dados na próxima fase.</div>
+</div>
+
+<div id="page-msgs" class="page">
+<div class="msgs-wrap">
+<div class="msgs-sidebar" id="msgs-sidebar-wrap">
+<div class="msgs-list">
+<div class="msgs-list-header">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+<div class="msgs-list-title" style="margin-bottom:0;">Mensagens</div>
+<button onclick="openNewConvModal()" style="padding:5px 12px;border-radius:7px;background:var(--accent-dim);border:1px solid rgba(200,240,96,0.25);color:var(--accent);font-size:11px;font-weight:600;font-family:var(--font-body);cursor:pointer;">+ Nova</button>
+</div>
+<div class="msgs-search">
+<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="5.5" r="4"/><path d="M9 9l2.5 2.5"/></svg>
+<input placeholder="Buscar conversa…" id="msgs-search-input">
+</div>
+</div>
+<div class="conv-list" id="conv-list">
+<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">Carregando conversas...</div>
+</div>
+</div>
+</div>
+<div class="chat-area" id="chat-area">
+<div class="chat-empty" id="chat-empty">
+<div style="font-size:32px;">💬</div>
+<div style="font-size:15px;font-weight:500;color:var(--text);">Suas mensagens</div>
+<div style="font-size:13px;">Selecione uma conversa ou inicie uma nova</div>
+</div>
+<div id="chat-open" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+<div class="chat-back-btn" onclick="mobileBackToConvList()">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+Voltar
+</div>
+<div class="chat-header">
+<div class="chat-header-av" id="chat-av"></div>
+<div class="chat-online"></div>
+<div>
+<div class="chat-name" id="chat-name">...</div>
+<div class="chat-role" id="chat-role">...</div>
+</div>
+</div>
+<div class="chat-messages" id="chat-messages"></div>
+<div class="chat-input-area">
+<textarea class="chat-input" id="chat-input" placeholder="Digite uma mensagem…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
+<button class="send-btn" onclick="sendMessage()">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#0d0f14" stroke-width="2"><path d="M2 8l12-6-5 12-2-5-5-1z"/></svg>
+</button>
+</div>
+</div>
+</div>
+</div>
 </div>
 
 <div id="page-busca" class="page">
