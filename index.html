@@ -252,7 +252,88 @@ select.form-input { cursor: pointer; }
 
 ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-@media(max-width:900px){ .right-col{display:none;} .sidebar{width:60px;min-width:60px;} .logo-name,.logo-tag,.nav-section,.nav-item span,.user-info{display:none;} .nav-item{justify-content:center;} }
+/* ===== MOBILE LAYOUT ===== */
+@media(max-width:900px){
+  .right-col { display:none; }
+  .side-col { display:none; }
+  .sidebar { display:none; }
+  .main { width:100%; }
+  .feed-col { padding:16px 12px; max-width:100%; }
+  .topbar { padding:0 12px; }
+  .topbar-title { font-size:15px; }
+  .search-bar { display:none; }
+  .profile-content { padding:16px 12px; flex-direction:column; }
+  .meu-perfil-content { padding:16px 12px; flex-direction:column; }
+  .meu-perfil-col { max-width:100%; }
+  .grupos-content { padding:16px 12px; }
+  .grupos-grid { grid-template-columns:1fr; }
+  .opor-content { padding:16px 12px; }
+  .rede-content { padding:16px 12px; }
+  .rede-grid { grid-template-columns:1fr 1fr; }
+  .admin-content { padding:16px 12px; }
+  .admin-grid { grid-template-columns:1fr 1fr; }
+  .msgs-sidebar { width:100%; }
+  .chat-area { display:none; }
+  .msgs-sidebar.hidden { display:none; }
+  .chat-area.visible { display:flex !important; flex-direction:column; width:100%; }
+  .edit-row { flex-direction:column; gap:0; }
+  .post-card { padding:14px; }
+  .cover { height:90px; }
+  .mp-info { padding:28px 16px 16px; }
+  .empresa-metrics { grid-template-columns:1fr 1fr 1fr; }
+}
+
+/* BOTTOM NAV — mobile only */
+.bottom-nav {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  height:60px;
+  z-index:1000;
+  padding:0 8px;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.bottom-nav-inner {
+  display:flex; align-items:center; justify-content:space-around;
+  height:100%;
+}
+.bn-item {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:6px 12px; border-radius:8px; cursor:pointer;
+  color:var(--muted); font-size:10px; font-weight:500;
+  transition:all 0.15s; position:relative; flex:1;
+  text-align:center;
+}
+.bn-item:hover { color:var(--text); }
+.bn-item.active { color:var(--accent); }
+.bn-item svg { width:20px; height:20px; flex-shrink:0; }
+.bn-badge {
+  position:absolute; top:4px; right:18px;
+  background:var(--accent); color:#0d0f14;
+  font-size:9px; font-weight:700;
+  border-radius:8px; padding:1px 5px;
+  min-width:16px; text-align:center;
+}
+@media(max-width:900px){
+  .bottom-nav { display:block; }
+  .main { padding-bottom:60px; }
+  .app { overflow:hidden; }
+}
+
+/* BACK BUTTON for chat on mobile */
+.chat-back-btn {
+  display:none;
+  align-items:center; gap:6px;
+  padding:8px 12px; cursor:pointer;
+  color:var(--muted); font-size:13px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.chat-back-btn:hover { color:var(--text); }
+@media(max-width:900px){
+  .chat-back-btn { display:flex; }
+}
 
 /* ===== MENSAGENS ===== */
 #page-msgs { gap: 0; }
@@ -647,6 +728,33 @@ select.form-input { cursor: pointer; }
 
   </main>
 </div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <div class="bn-item active" id="bn-feed" onclick="goPage('feed');setBottomNav('feed')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+      Feed
+    </div>
+    <div class="bn-item" id="bn-msgs" onclick="goPage('msgs');setBottomNav('msgs')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h14v10H9l-3 3V11H1z"/></svg>
+      <span class="bn-badge" id="bn-msgs-badge" style="display:none">0</span>
+      Msgs
+    </div>
+    <div class="bn-item" id="bn-grupos" onclick="goPage('grupos');setBottomNav('grupos')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-2.2 1.8-4 4-4h4c2.2 0 4 1.8 4 4"/><circle cx="6" cy="5" r="2"/><circle cx="10" cy="5" r="2"/></svg>
+      Grupos
+    </div>
+    <div class="bn-item" id="bn-opor" onclick="goPage('opor');setBottomNav('opor')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l2 4h4l-3 3 1 5-4-2.5L4 13l1-5L2 5h4z"/></svg>
+      Opor.
+    </div>
+    <div class="bn-item" id="bn-meu-perfil" onclick="goPage('meu-perfil');setBottomNav('meu-perfil')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-5 6-5s6 1.7 6 5"/></svg>
+      Perfil
+    </div>
+  </div>
+</nav>
 </div>
 
 <!-- ADMIN PAGE -->
@@ -747,6 +855,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <div style="font-size:13px;">Selecione uma conversa ou inicie uma nova</div>
         </div>
         <div id="chat-open" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+          <div class="chat-back-btn" onclick="mobileBackToConvList()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+            Voltar
+          </div>
           <div class="chat-header">
             <div class="chat-header-av" id="chat-av"></div>
             <div class="chat-online"></div>
@@ -1142,6 +1254,23 @@ async function loadRecentMembers() {
   }).join('');
 }
 
+// ===== MOBILE NAV =====
+function setBottomNav(page) {
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  const bn = document.getElementById('bn-' + page);
+  if (bn) bn.classList.add('active');
+}
+
+function mobileBackToConvList() {
+  const msgsSidebar = document.querySelector('.msgs-sidebar');
+  const chatArea = document.getElementById('chat-area');
+  if (msgsSidebar) msgsSidebar.classList.remove('hidden');
+  if (chatArea) chatArea.classList.remove('visible');
+}
+
+// Override openChat for mobile
+const _originalOpenChat = typeof openChat !== 'undefined' ? openChat : null;
+
 // ===== REALTIME FEED =====
 let feedSubscription = null;
 
@@ -1209,6 +1338,8 @@ function goPage(p) {
   if (tt) tt.textContent = pageTitles[p] || '';
   if (p === 'msgs' && currentUser) loadConversations();
   if (p === 'admin' && isAdmin) loadAdminData();
+  // Sync bottom nav
+  setBottomNav(p);
 }
 
 function setTab(el) {
@@ -1372,10 +1503,16 @@ async function loadConversations() {
 async function openChat(userId) {
   currentChatUserId = userId;
   document.querySelectorAll('.conv-item').forEach(c => c.classList.remove('active'));
-  const ci = document.getElementById('conv-' + userId);
-  if (ci) ci.classList.remove('active') || ci.classList.add('active');
   const convItem = document.getElementById('conv-' + userId);
   if (convItem) convItem.classList.add('active');
+  // Mobile: hide list, show chat
+  const isMobile = window.innerWidth <= 900;
+  if (isMobile) {
+    const msgsSidebar = document.querySelector('.msgs-sidebar');
+    const chatArea = document.getElementById('chat-area');
+    if (msgsSidebar) msgsSidebar.classList.add('hidden');
+    if (chatArea) chatArea.classList.add('visible');
+  }
 
   document.getElementById('chat-empty').style.display = 'none';
   const chatOpen = document.getElementById('chat-open');
