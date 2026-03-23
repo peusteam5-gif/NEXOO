@@ -319,6 +319,8 @@ select.form-input { cursor: pointer; }
   .bottom-nav { display:block; }
   .main { padding-bottom:60px; }
   .app { overflow:hidden; }
+  #mobile-search-btn { display:flex !important; }
+  .search-bar { display:none !important; }
 }
 
 /* BACK BUTTON for chat on mobile */
@@ -486,6 +488,32 @@ select.form-input { cursor: pointer; }
 .pub-post-text { font-size: 13px; color: #c8c5be; line-height: 1.55; margin-bottom: 6px; }
 .pub-post-meta { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--muted); }
 @media(max-width:900px) { .pub-perfil-wrap { padding: 16px 12px; } }
+
+/* ===== BUSCA GLOBAL ===== */
+.search-dropdown {
+  position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+  width: 520px; max-width: calc(100vw - 32px);
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 14px; z-index: 2000;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  overflow: hidden; animation: fadeUp 0.2s ease both;
+}
+.search-section-title { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 12px 16px 6px; }
+.search-result { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; transition: background 0.12s; }
+.search-result:hover { background: var(--surface2); }
+.search-result-av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 12px; font-weight: 700; color: #0d0f14; flex-shrink: 0; overflow: hidden; }
+.search-result-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.search-result-av.post-icon { border-radius: 8px; background: var(--surface2); font-size: 14px; }
+.search-result-info { flex: 1; min-width: 0; }
+.search-result-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-result-sub { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-result-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(200,240,96,0.2); flex-shrink: 0; }
+.search-empty { padding: 20px; text-align: center; font-size: 13px; color: var(--muted); }
+.search-divider { height: 1px; background: var(--border); margin: 4px 0; }
+.search-bar-active { border-color: rgba(200,240,96,0.4) !important; }
+@media(max-width:900px) {
+  .search-dropdown { width: calc(100vw - 24px); top: 56px; left: 12px; transform: none; }
+}
 </style>
 </head>
 <body>
@@ -676,9 +704,16 @@ select.form-input { cursor: pointer; }
         Voltar
       </button>
       <div class="topbar-title" id="topbar-title">Feed de Negócios</div>
-      <div class="search-bar">
+      <div class="search-bar" id="search-bar-wrap" style="position:relative;">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4.5"/><path d="M10 10l2.5 2.5"/></svg>
-        <input type="text" placeholder="Buscar empresas, pessoas, temas…">
+        <input type="text" id="global-search-input" placeholder="Buscar pessoas, posts, empresas…"
+          oninput="onSearchInput(this.value)"
+          onfocus="onSearchFocus()"
+          onkeydown="onSearchKey(event)">
+        <button id="search-clear-btn" onclick="clearSearch()" style="display:none;background:none;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:14px;">✕</button>
+      </div>
+      <div class="notif-btn" id="mobile-search-btn" onclick="toggleMobileSearch()" style="display:none;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M11 11l3 3"/></svg>
       </div>
       <div class="notif-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a5 5 0 0 1 5 5v3l1 2H2l1-2V6a5 5 0 0 1 5-5z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg><div class="notif-dot"></div></div>
     </div>
@@ -1650,6 +1685,149 @@ async function loadMyFollowing() {
   const { data } = await sb.from('follows').select('following_id').eq('follower_id', currentUser.id);
   myFollowing = new Set((data || []).map(f => f.following_id));
 }
+
+// ===== BUSCA GLOBAL =====
+let searchTimer = null;
+let searchDropdown = null;
+
+function onSearchFocus() {
+  const input = document.getElementById('global-search-input');
+  const wrap = document.getElementById('search-bar-wrap');
+  if (wrap) wrap.classList.add('search-bar-active');
+  if (input && input.value.trim().length > 0) showSearchDropdown(input.value);
+  else showSearchDropdown('');
+}
+
+function onSearchInput(val) {
+  const clearBtn = document.getElementById('search-clear-btn');
+  if (clearBtn) clearBtn.style.display = val.length > 0 ? 'block' : 'none';
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => showSearchDropdown(val), 300);
+}
+
+function onSearchKey(e) {
+  if (e.key === 'Escape') clearSearch();
+}
+
+function clearSearch() {
+  const input = document.getElementById('global-search-input');
+  const clearBtn = document.getElementById('search-clear-btn');
+  const wrap = document.getElementById('search-bar-wrap');
+  if (input) input.value = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  if (wrap) wrap.classList.remove('search-bar-active');
+  removeSearchDropdown();
+}
+
+function removeSearchDropdown() {
+  if (searchDropdown) { searchDropdown.remove(); searchDropdown = null; }
+}
+
+async function showSearchDropdown(query) {
+  removeSearchDropdown();
+  const wrap = document.getElementById('search-bar-wrap');
+  if (!wrap) return;
+
+  // Create dropdown
+  searchDropdown = document.createElement('div');
+  searchDropdown.className = 'search-dropdown';
+  searchDropdown.innerHTML = '<div class="search-empty">Buscando...</div>';
+
+  // Position relative to topbar
+  const topbar = document.querySelector('.topbar');
+  if (topbar) {
+    topbar.style.position = 'relative';
+    topbar.appendChild(searchDropdown);
+  }
+
+  const q = query.trim();
+
+  // Search users and posts in parallel
+  const [usersRes, postsRes] = await Promise.all([
+    q.length > 0
+      ? sb.from('profiles').select('id, nome, empresa, setor, avatar_url').or(`nome.ilike.%${q}%,empresa.ilike.%${q}%,setor.ilike.%${q}%`).neq('id', currentUser?.id).limit(5)
+      : sb.from('profiles').select('id, nome, empresa, setor, avatar_url').neq('id', currentUser?.id).limit(5),
+    q.length > 0
+      ? sb.from('posts').select('id, content, user_id, author_meta, likes').ilike('content', `%${q}%`).order('created_at', {ascending:false}).limit(5)
+      : Promise.resolve({ data: [] })
+  ]);
+
+  const users = usersRes.data || [];
+  const posts = postsRes.data || [];
+  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+
+  if (users.length === 0 && posts.length === 0) {
+    searchDropdown.innerHTML = `<div class="search-empty">${q.length > 0 ? 'Nenhum resultado para "' + q + '"' : 'Digite para buscar'}</div>`;
+    return;
+  }
+
+  let html = '';
+
+  // Users section
+  if (users.length > 0) {
+    html += '<div class="search-section-title">Pessoas</div>';
+    html += users.map(u => {
+      const nome = u.nome || 'Empresário';
+      const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      const color = colors[nome.charCodeAt(0) % colors.length];
+      const av = u.avatar_url
+        ? `<img src="${u.avatar_url}">`
+        : initials;
+      return `<div class="search-result" onclick="clearSearch();openPublicProfile('${u.id}')">
+        <div class="search-result-av" style="background:${color}">${av}</div>
+        <div class="search-result-info">
+          <div class="search-result-name">${nome}</div>
+          <div class="search-result-sub">${u.empresa || u.setor || 'Membro da Nexo'}</div>
+        </div>
+        <div class="search-result-badge">Perfil</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Posts section
+  if (posts.length > 0) {
+    if (users.length > 0) html += '<div class="search-divider"></div>';
+    html += '<div class="search-section-title">Posts</div>';
+    html += posts.map(p => {
+      const nome = p.author_meta?.nome || 'Empresário';
+      const preview = p.content.length > 80 ? p.content.slice(0, 80) + '...' : p.content;
+      return `<div class="search-result" onclick="clearSearch();goPage('feed')">
+        <div class="search-result-av post-icon">📝</div>
+        <div class="search-result-info">
+          <div class="search-result-name">${preview}</div>
+          <div class="search-result-sub">${nome} · ❤️ ${p.likes || 0}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  searchDropdown.innerHTML = html;
+}
+
+// Mobile search toggle
+function toggleMobileSearch() {
+  const bar = document.getElementById('search-bar-wrap');
+  if (!bar) return;
+  const isVisible = bar.style.display !== 'none' && getComputedStyle(bar).display !== 'none';
+  if (isVisible) {
+    bar.style.display = 'none';
+    clearSearch();
+  } else {
+    bar.style.display = 'flex';
+    bar.style.position = 'absolute';
+    bar.style.left = '12px';
+    bar.style.right = '100px';
+    bar.style.top = '10px';
+    bar.style.maxWidth = 'none';
+    setTimeout(() => document.getElementById('global-search-input')?.focus(), 100);
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.getElementById('search-bar-wrap');
+  if (wrap && !wrap.contains(e.target)) clearSearch();
+}, true);
 
 // ===== MOBILE NAV =====
 function setBottomNav(page) {
