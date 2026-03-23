@@ -2570,6 +2570,15 @@ return `<div class="reel-item" data-reel-index="${index}" data-post-id="${v.id}"
 </div>
 
 <div class="reel-actions">
+<div class="reel-action-btn" onclick="toggleReelMute(this,'reel-video-${v.id}')" id="mute-btn-${v.id}">
+<div class="reel-action-icon" style="position:relative;">
+<svg width="22" height="22" viewBox="0 0 18 18" fill="none" stroke="white" stroke-width="1.5">
+<path d="M3 6H1v6h2l5 4V2L3 6z"/>
+<path class="sound-waves" d="M13 6c1 1 1.5 2 1.5 3S14 12 13 13M15.5 3.5c2 2 3 4.5 3 5.5s-1 3.5-3 5.5"/>
+</svg>
+</div>
+<div class="reel-action-count" style="font-size:9px;">Som</div>
+</div>
 <div class="reel-action-btn" onclick="toggleReelLike('${v.id}',this)">
 <div class="reel-action-icon ${isLiked?'liked':''}">
 <svg width="22" height="22" viewBox="0 0 22 22" fill="${isLiked?'rgba(200,240,96,0.8)':'none'}" stroke="${isLiked?'var(--accent)':'white'}" stroke-width="1.5"><path d="M11 19s-8-5.5-8-11A5.5 5.5 0 0 1 11 4.6 5.5 5.5 0 0 1 19 8c0 5.5-8 11-8 11z"/></svg>
@@ -2625,6 +2634,24 @@ video.currentTime = 0;
 }, { threshold: 0.7 });
 
 document.querySelectorAll('.reel-item').forEach(item => reelObserver.observe(item));
+}
+
+function toggleReelMute(btn, videoId) {
+  const video = document.getElementById(videoId);
+  if (!video) return;
+  video.muted = !video.muted;
+  const waves = btn.querySelectorAll('.sound-waves');
+  const icon = btn.querySelector('.reel-action-icon');
+  if (video.muted) {
+    waves.forEach(w => w.style.display = 'none');
+    if (icon) icon.style.opacity = '0.5';
+    btn.querySelector('.reel-action-count').textContent = 'Mudo';
+  } else {
+    waves.forEach(w => w.style.display = '');
+    if (icon) icon.style.opacity = '1';
+    btn.querySelector('.reel-action-count').textContent = 'Som';
+    video.play().catch(()=>{});
+  }
 }
 
 async function toggleReelLike(postId, btn) {
