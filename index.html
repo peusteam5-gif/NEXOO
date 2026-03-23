@@ -2875,18 +2875,33 @@ function startRealtimeNotifications() {
       table: 'notifications'
     }, payload => {
       // Only handle notifications for current user
-      if (payload.new.user_id !== currentUser.id) return;
+      if (payload.new.user_id !== currentUser?.id) return;
+      // Update badge
       loadUnreadCount();
+      // Show toast
       const icons = { like: '❤️', comment: '💬', follow: '👤', message: '✉️' };
       const icon = icons[payload.new.type] || '🔔';
       toast(icon + ' ' + payload.new.message, 'success');
+      // Play notification sound
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+      } catch(e) {}
       // Update notif sheet if open
       if (notifOpen) {
         const list = document.getElementById('notif-list');
         if (list) {
           const item = document.createElement('div');
           item.className = 'notif-item unread';
-          item.innerHTML = `<div class="notif-icon">${icon}</div><div class="notif-content"><div class="notif-text">${payload.new.message}</div><div class="notif-time">agora</div></div>`;
+          item.innerHTML = '<div class="notif-icon">' + icon + '</div><div class="notif-content"><div class="notif-text">' + payload.new.message + '</div><div class="notif-time">agora</div></div>';
           list.insertBefore(item, list.firstChild);
         }
       }
