@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexo — Rede de Empresários</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0f14; --surface: #13161e; --surface2: #1a1e28;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --text: #e8e6e0; --muted: #6b6e7a;
+  --accent: #c8f060; --accent2: #4af0b0; --accent-dim: rgba(200,240,96,0.12);
+  --gold: #f0c040; --red: #ff5a5a;
+  --font-head: 'Syne', sans-serif; --font-body: 'DM Sans', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 14px; line-height: 1.6; min-height: 100vh; overflow: hidden; }
+
+/* ===== LAYOUT ===== */
+.app { display: flex; height: 100vh; }
+
+/* ===== SIDEBAR ===== */
+.sidebar { width: 220px; min-width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+.logo { padding: 22px 20px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; cursor:pointer; }
+.logo-mark { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink:0; }
+.logo-name { font-family: var(--font-head); font-size: 18px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+.logo-tag { font-size: 10px; color: var(--muted); font-weight: 300; margin-top: -2px; }
+.nav { padding: 16px 10px; flex: 1; }
+.nav-section { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px 6px; margin-top: 10px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 13.5px; transition: all 0.15s; margin-bottom: 2px; }
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 500; }
+.nav-item .icon { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+.nav-item.active .icon { opacity: 1; }
+.nav-badge { margin-left: auto; background: var(--accent); color: #0d0f14; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 6px; }
+.sidebar-user { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,#4af0b0,#c8f060); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 13px; font-weight: 700; color: #0d0f14; flex-shrink: 0; }
+.user-info .uname { font-size: 13px; font-weight: 500; color: var(--text); }
+.user-info .urole { font-size: 11px; color: var(--muted); }
+
+/* ===== MAIN ===== */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.topbar { height: 56px; min-height: 56px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; }
+.topbar-title { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--text); }
+.search-bar { flex: 1; max-width: 340px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 8px; padding: 7px 12px; margin-left: auto; }
+.search-bar input { background: none; border: none; outline: none; color: var(--text); font-family: var(--font-body); font-size: 13px; flex: 1; min-width: 0; }
+.search-bar input::placeholder { color: var(--muted); }
+.notif-btn { width: 34px; height: 34px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; color: var(--muted); }
+.notif-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); }
+.page { display: none; flex: 1; overflow-y: auto; }
+.page.active { display: flex; }
+
+/* ===== SHARED COMPONENTS ===== */
+.btn-primary { padding: 8px 18px; border-radius: 8px; background: var(--accent); color: #0d0f14; font-size: 13px; font-weight: 600; font-family: var(--font-body); border: none; cursor: pointer; transition: all 0.15s; }
+.btn-primary:hover { background: #d6f57a; }
+.btn-outline { padding: 8px 14px; border-radius: 8px; background: none; color: var(--muted); font-size: 13px; font-family: var(--font-body); border: 1px solid var(--border2); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+.btn-outline:hover { color: var(--text); background: var(--surface2); }
+.tag { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 500; border: 1px solid var(--border); color: var(--muted); display: inline-block; }
+.tag.accent { background: var(--accent-dim); border-color: rgba(200,240,96,0.2); color: var(--accent); }
+.tag.teal { background: rgba(74,240,176,0.1); border-color: rgba(74,240,176,0.2); color: var(--accent2); }
+.tag.gold { background: rgba(240,192,64,0.1); border-color: rgba(240,192,64,0.2); color: var(--gold); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.fade { animation: fadeUp 0.25s ease both; }
+
+/* ===== LOGIN ===== */
+#page-login { background: var(--bg); align-items: center; justify-content: center; flex-direction: column; }
+.login-wrap { width: 100%; max-width: 420px; padding: 24px; }
+.login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+.login-logo-mark { width: 40px; height: 40px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.login-logo-name { font-family: var(--font-head); font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+.login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; }
+.login-title { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.05em; }
+.form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; color: var(--text); font-family: var(--font-body); font-size: 14px; outline: none; transition: border-color 0.15s; }
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--muted); }
+.login-btn { width: 100%; padding: 12px; border-radius: 8px; background: var(--accent); color: #0d0f14; font-size: 14px; font-weight: 700; font-family: var(--font-head); border: none; cursor: pointer; margin-top: 8px; transition: all 0.15s; }
+.login-btn:hover { background: #d6f57a; }
+.login-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+.login-divider span { font-size: 12px; color: var(--muted); }
+.login-divider::before, .login-divider::after { content:''; flex:1; height:1px; background: var(--border); }
+.login-switch { text-align: center; font-size: 13px; color: var(--muted); margin-top: 20px; }
+.login-switch a { color: var(--accent); cursor: pointer; text-decoration: none; }
+
+/* ===== CADASTRO ===== */
+#page-cadastro { background: var(--bg); align-items: center; justify-content: center; flex-direction: column; }
+.cad-steps { display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
+.cad-step { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; font-family: var(--font-head); background: var(--surface2); border: 1px solid var(--border); color: var(--muted); transition: all 0.3s; }
+.cad-step.active { background: var(--accent); border-color: var(--accent); color: #0d0f14; }
+.cad-step.done { background: var(--accent2); border-color: var(--accent2); color: #0d0f14; }
+.cad-line { height: 1px; flex: 1; background: var(--border); }
+.cad-panel { display: none; }
+.cad-panel.active { display: block; animation: fadeUp 0.25s ease both; }
+.cad-wrap { width: 100%; max-width: 460px; padding: 24px; }
+
+/* ===== FEED ===== */
+#page-feed { gap: 0; }
+.feed-col { flex: 1; padding: 24px; max-width: 620px; overflow-y: auto; }
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+.tab { padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--muted); transition: all 0.15s; border: 1px solid transparent; }
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(200,240,96,0.2); }
+.post-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.post-box-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.post-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--muted); font-family: var(--font-body); font-size: 13.5px; cursor: pointer; }
+.post-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.post-action-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 7px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); font-size: 12px; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; }
+.post-action-btn:hover { color: var(--text); }
+.post-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 14px; transition: border-color 0.15s; animation: fadeUp 0.3s ease both; }
+.post-card:hover { border-color: var(--border2); }
+.post-card.featured { border-color: rgba(200,240,96,0.2); }
+.post-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+.post-meta { flex: 1; }
+.post-name { font-size: 14px; font-weight: 500; color: var(--text); }
+.post-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.post-time { font-size: 11px; color: var(--muted); margin-left: auto; flex-shrink: 0; }
+.post-body { font-size: 14px; color: #c8c5be; line-height: 1.65; margin-bottom: 12px; }
+.post-tags { margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+.post-footer { display: flex; gap: 4px; border-top: 1px solid var(--border); padding-top: 12px; }
+.post-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 7px; background: none; border: none; color: var(--muted); font-size: 12px; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; }
+.post-btn:hover { background: var(--surface2); color: var(--text); }
+.post-btn.liked { color: var(--accent); }
+.right-col { width: 300px; min-width: 300px; padding: 24px 20px; border-left: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+.panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.panel-header { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+.panel-title { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: 0.02em; text-transform: uppercase; }
+.panel-link { font-size: 11px; color: var(--accent); cursor: pointer; }
+.suggested-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+.suggested-item:hover { background: var(--surface2); }
+.sug-info { flex: 1; min-width: 0; }
+.sug-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.sug-role { font-size: 11px; color: var(--muted); }
+.connect-btn { padding: 4px 12px; border-radius: 6px; background: var(--accent-dim); border: 1px solid rgba(200,240,96,0.25); color: var(--accent); font-size: 11px; font-weight: 500; font-family: var(--font-body); cursor: pointer; flex-shrink: 0; transition: all 0.15s; }
+.group-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+.group-item:hover { background: var(--surface2); }
+.group-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.group-info .gname { font-size: 13px; font-weight: 500; color: var(--text); }
+.group-info .gcount { font-size: 11px; color: var(--muted); }
+.trend-item { padding: 10px 16px; border-top: 1px solid var(--border); cursor: pointer; transition: background 0.12s; }
+.trend-item:hover { background: var(--surface2); }
+.trend-tag { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 2px; }
+.trend-count { font-size: 11px; color: var(--muted); }
+.stats-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; }
+.stat-item { flex: 1; text-align: center; padding: 14px 0; }
+.stat-item + .stat-item { border-left: 1px solid var(--border); }
+.stat-val { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--text); }
+.stat-val.green { color: var(--accent); }
+.stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ===== PERFIL ===== */
+#page-perfil { gap: 0; }
+.profile-content { flex: 1; overflow-y: auto; display: flex; justify-content: center; padding: 32px 24px; gap: 24px; }
+.profile-col { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 16px; }
+.profile-card-main { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; animation: fadeUp 0.3s ease both; }
+.cover { height: 140px; background: linear-gradient(135deg,#1a2a1a 0%,#0f1f2a 40%,#1a1030 100%); position: relative; overflow: hidden; }
+.cover-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px); background-size: 32px 32px; }
+.cover-glow { position: absolute; inset: 0; background-image: radial-gradient(circle at 20% 50%,rgba(200,240,96,0.08) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(74,240,176,0.06) 0%,transparent 40%); }
+.profile-av-wrap { position: absolute; bottom: -28px; left: 24px; }
+.profile-av { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg,#f0c040,#ff8c40); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 26px; font-weight: 700; color: #0d0f14; border: 3px solid var(--surface); }
+.verified-badge { position: absolute; bottom: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent2); border: 2px solid var(--surface); display: flex; align-items: center; justify-content: center; font-size: 9px; color: #0d0f14; font-weight: 700; }
+.profile-info { padding: 42px 24px 20px; }
+.profile-name-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.profile-name { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--text); }
+.profile-headline { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+.profile-loc { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.profile-tags-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.profile-stats { display: flex; gap: 0; border-top: 1px solid var(--border); padding-top: 16px; }
+.pstat { flex: 1; text-align: center; cursor: pointer; padding: 4px 0; border-radius: 8px; transition: background 0.15s; }
+.pstat:hover { background: var(--surface2); }
+.pstat + .pstat { border-left: 1px solid var(--border); }
+.pstat-val { font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--text); }
+.pstat-val.green { color: var(--accent); }
+.pstat-label { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; animation: fadeUp 0.3s ease both; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.section-title { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; }
+.section-link { font-size: 12px; color: var(--accent); cursor: pointer; }
+.about-text { font-size: 14px; color: #c8c5be; line-height: 1.7; }
+.empresa-row { display: flex; align-items: center; gap: 14px; }
+.empresa-logo { width: 48px; height: 48px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 16px; font-weight: 800; color: var(--accent); flex-shrink: 0; }
+.empresa-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 16px; }
+.metric-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+.metric-val { font-family: var(--font-head); font-size: 17px; font-weight: 700; color: var(--text); }
+.metric-val.accent { color: var(--accent); }
+.metric-label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.exp-item { display: flex; gap: 14px; padding: 12px 0; border-top: 1px solid var(--border); }
+.exp-item:first-of-type { border-top: none; padding-top: 0; }
+.exp-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
+.exp-dot.muted { background: var(--muted); }
+.mini-post { padding: 12px 0; border-top: 1px solid var(--border); cursor: pointer; }
+.mini-post:first-of-type { border-top: none; padding-top: 0; }
+.mini-post-text { font-size: 13px; color: #c8c5be; line-height: 1.55; margin-bottom: 6px; }
+.mini-post-meta { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--muted); }
+.badges-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+.badge-item { text-align: center; cursor: pointer; }
+.badge-icon { width: 48px; height: 48px; border-radius: 12px; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 22px; border: 1px solid var(--border); transition: transform 0.15s; }
+.badge-item:hover .badge-icon { transform: scale(1.08); }
+.badge-icon.gold { background: rgba(240,192,64,0.12); border-color: rgba(240,192,64,0.2); }
+.badge-icon.green { background: var(--accent-dim); border-color: rgba(200,240,96,0.2); }
+.badge-icon.teal { background: rgba(74,240,176,0.1); border-color: rgba(74,240,176,0.2); }
+.badge-icon.gray { background: var(--surface2); }
+.badge-name { font-size: 10px; color: var(--muted); line-height: 1.3; }
+.side-col { width: 280px; min-width: 280px; display: flex; flex-direction: column; gap: 14px; padding: 32px 0; }
+.side-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.side-header { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+.side-title-sm { font-family: var(--font-head); font-size: 12px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.05em; }
+.contact-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+.mutual-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--border); }
+.mutual-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 11px; font-weight: 700; color: #0d0f14; flex-shrink: 0; }
+
+/* ===== GRUPOS ===== */
+#page-grupos { gap: 0; }
+.grupos-content { flex: 1; padding: 28px; overflow-y: auto; }
+.grupos-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.grupos-title { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--text); }
+.grupos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 16px; margin-bottom: 32px; }
+.grupo-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: border-color 0.15s, transform 0.15s; animation: fadeUp 0.3s ease both; }
+.grupo-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.grupo-cover { height: 70px; display: flex; align-items: center; justify-content: center; font-size: 32px; position: relative; }
+.grupo-body { padding: 14px 16px; }
+.grupo-name { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.grupo-desc { font-size: 12px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+.grupo-footer { display: flex; align-items: center; justify-content: space-between; }
+.grupo-members { font-size: 11px; color: var(--muted); }
+.join-btn { padding: 5px 14px; border-radius: 6px; font-size: 11px; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; border: 1px solid rgba(200,240,96,0.3); background: var(--accent-dim); color: var(--accent); }
+.join-btn.joined { background: rgba(74,240,176,0.1); border-color: rgba(74,240,176,0.3); color: var(--accent2); }
+.grupos-section-title { font-family: var(--font-head); font-size: 14px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 14px; }
+
+/* ===== OPORTUNIDADES ===== */
+#page-opor { gap: 0; }
+.opor-content { flex: 1; padding: 28px; overflow-y: auto; max-width: 900px; }
+.opor-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.opor-filters { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; font-family: var(--font-body); cursor: pointer; border: 1px solid var(--border); background: none; color: var(--muted); transition: all 0.15s; }
+.filter-btn:hover { color: var(--text); border-color: var(--border2); }
+.filter-btn.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(200,240,96,0.25); }
+.opor-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 14px; cursor: pointer; transition: border-color 0.15s; animation: fadeUp 0.3s ease both; }
+.opor-card:hover { border-color: var(--border2); }
+.opor-card.highlight { border-color: rgba(200,240,96,0.25); }
+.opor-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px; }
+.opor-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; border: 1px solid var(--border); }
+.opor-meta { flex: 1; }
+.opor-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; font-family: var(--font-head); }
+.opor-company { font-size: 12px; color: var(--muted); }
+.opor-badge { display: flex; align-items: center; gap: 6px; }
+.opor-desc { font-size: 13px; color: #c8c5be; line-height: 1.6; margin-bottom: 12px; }
+.opor-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.opor-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border); }
+.opor-info { font-size: 12px; color: var(--muted); display: flex; gap: 16px; }
+.opor-actions { display: flex; gap: 8px; }
+
+/* ===== REDE ===== */
+#page-rede { gap: 0; }
+.rede-content { flex: 1; padding: 28px; overflow-y: auto; }
+.rede-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 14px; margin-bottom: 28px; }
+.rede-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.15s; animation: fadeUp 0.3s ease both; }
+.rede-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.rede-av { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 20px; font-weight: 700; color: #0d0f14; }
+.rede-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 3px; font-family: var(--font-head); }
+.rede-role { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.rede-mutual { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+.rede-card .connect-btn { display: block; width: 100%; text-align: center; padding: 7px; border-radius: 8px; }
+.solicit-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+.solicit-item { background: var(--surface); border: 1px solid rgba(200,240,96,0.15); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; animation: fadeUp 0.3s ease both; }
+.solicit-info { flex: 1; }
+.solicit-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.solicit-role { font-size: 12px; color: var(--muted); }
+.solicit-actions { display: flex; gap: 8px; }
+.btn-accept { padding: 6px 14px; border-radius: 7px; background: var(--accent); color: #0d0f14; font-size: 12px; font-weight: 600; font-family: var(--font-body); border: none; cursor: pointer; }
+.btn-decline { padding: 6px 14px; border-radius: 7px; background: none; border: 1px solid var(--border2); color: var(--muted); font-size: 12px; font-family: var(--font-body); cursor: pointer; }
+
+/* ===== MENSAGENS ===== */
+#page-msgs { gap: 0; }
+.msgs-sidebar { width: 300px; min-width: 300px; border-right: 1px solid var(--border); overflow-y: auto; }
+.msgs-header { padding: 20px 16px 14px; border-bottom: 1px solid var(--border); }
+.msgs-title { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+.msg-search { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+.msg-search input { background: none; border: none; outline: none; color: var(--text); font-family: var(--font-body); font-size: 13px; flex: 1; min-width: 0; }
+.msg-search input::placeholder { color: var(--muted); }
+.conv-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid var(--border); position: relative; }
+.conv-item:hover, .conv-item.active { background: var(--surface2); }
+.conv-item.active { background: var(--accent-dim); }
+.conv-info { flex: 1; min-width: 0; }
+.conv-name { font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.conv-time { font-size: 10px; color: var(--muted); }
+.conv-preview { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conv-unread { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.chat-status { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); }
+.chat-name { font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--font-head); }
+.chat-role { font-size: 12px; color: var(--muted); }
+.chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.msg-bubble { max-width: 70%; }
+.msg-bubble.them { align-self: flex-start; }
+.msg-bubble.me { align-self: flex-end; }
+.bubble-text { padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.55; }
+.them .bubble-text { background: var(--surface2); color: var(--text); border-radius: 4px 12px 12px 12px; }
+.me .bubble-text { background: var(--accent-dim); color: var(--text); border: 1px solid rgba(200,240,96,0.2); border-radius: 12px 4px 12px 12px; }
+.bubble-time { font-size: 10px; color: var(--muted); margin-top: 4px; }
+.me .bubble-time { text-align: right; }
+.chat-input-area { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: flex-end; }
+.chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-family: var(--font-body); font-size: 13px; outline: none; resize: none; min-height: 40px; max-height: 100px; line-height: 1.5; transition: border-color 0.15s; }
+.chat-input:focus { border-color: var(--border2); }
+.chat-input::placeholder { color: var(--muted); }
+.send-btn { width: 38px; height: 38px; border-radius: 8px; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.send-btn:hover { background: #d6f57a; }
+
+/* ===== NOTIFICAÇÕES ===== */
+#page-notif { gap: 0; }
+.notif-content { flex: 1; padding: 28px; overflow-y: auto; max-width: 720px; }
+.notif-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.12s; border-radius: 8px; padding-left: 8px; }
+.notif-item:hover { background: var(--surface2); padding-left: 8px; }
+.notif-item.unread { background: rgba(200,240,96,0.04); }
+.notif-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.notif-text { flex: 1; }
+.notif-msg { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 3px; }
+.notif-msg strong { color: var(--text); font-weight: 600; }
+.notif-time { font-size: 11px; color: var(--muted); }
+.notif-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 6px; }
+
+@media(max-width:900px){
+  .right-col,.side-col { display:none; }
+  .sidebar { width:60px; min-width:60px; }
+  .logo-name,.logo-tag,.nav-section,.nav-item span,.user-info { display:none; }
+  .nav-item { justify-content:center; }
+  .msgs-sidebar { width:220px; min-width:220px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="page-login" class="page active" style="display:flex;">
+  <div class="login-wrap fade">
+    <div class="login-logo">
+      <div class="login-logo-mark">
+        <svg width="22" height="22" viewBox="0 0 18 18" fill="none"><path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="#0d0f14"/><path d="M9 5L12 7V11L9 13L6 11V7L9 5Z" fill="#c8f060"/></svg>
+      </div>
+      <div class="login-logo-name">Nexo</div>
+    </div>
+    <div class="login-card">
+      <div class="login-title">Bem-vindo de volta</div>
+      <div class="login-sub">Entre na maior rede de empresários do Brasil</div>
+      <div class="form-group">
+        <label class="form-label">E-mail</label>
+        <input class="form-input" type="email" placeholder="seu@email.com.br" id="login-email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input class="form-input" type="password" placeholder="••••••••" id="login-senha">
+      </div>
+      <div style="text-align:right; margin-bottom:4px;"><span style="font-size:12px;color:var(--accent);cursor:pointer;">Esqueci minha senha</span></div>
+      <button class="login-btn" onclick="goTo('feed')">Entrar na Nexo</button>
+      <div class="login-divider"><span>ou</span></div>
+      <button class="btn-outline" style="width:100%;justify-content:center;padding:11px;" onclick="goTo('feed')">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14.5 8.18c0-.56-.05-1.1-.14-1.62H8v3.07h3.65a3.12 3.12 0 0 1-1.35 2.05v1.7h2.18c1.28-1.18 2.02-2.92 2.02-5.2z" fill="#4285F4"/><path d="M8 15c1.83 0 3.37-.6 4.49-1.63l-2.18-1.7c-.61.4-1.38.65-2.31.65-1.78 0-3.28-1.2-3.82-2.82H1.93v1.76A6.99 6.99 0 0 0 8 15z" fill="#34A853"/><path d="M4.18 9.5A4.2 4.2 0 0 1 3.96 8c0-.52.09-1.02.22-1.5V4.74H1.93A7 7 0 0 0 1 8c0 1.13.27 2.2.93 3.26L4.18 9.5z" fill="#FBBC05"/><path d="M8 3.18c1 0 1.9.35 2.6 1.02l1.96-1.96A7 7 0 0 0 1.93 4.74L4.18 6.5C4.72 4.88 6.22 3.18 8 3.18z" fill="#EA4335"/></svg>
+        Entrar com Google
+      </button>
+      <div class="login-switch">Não tem conta? <a onclick="goTo('cadastro')">Criar conta grátis</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CADASTRO ==================== -->
+<div id="page-cadastro" class="page" style="display:none; flex-direction:column; align-items:center; justify-content:center;">
+  <div class="cad-wrap">
+    <div class="login-logo" style="margin-bottom:24px;">
+      <div class="login-logo-mark"><svg width="22" height="22" viewBox="0 0 18 18" fill="none"><path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="#0d0f14"/><path d="M9 5L12 7V11L9 13L6 11V7L9 5Z" fill="#c8f060"/></svg></div>
+      <div class="login-logo-name">Nexo</div>
+    </div>
+    <div class="cad-steps">
+      <div class="cad-step active" id="s1">1</div>
+      <div class="cad-line"></div>
+      <div class="cad-step" id="s2">2</div>
+      <div class="cad-line"></div>
+      <div class="cad-step" id="s3">3</div>
+    </div>
+    <div class="login-card">
+      <!-- Passo 1 -->
+      <div class="cad-panel active" id="cad-p1">
+        <div class="login-title">Criar sua conta</div>
+        <div class="login-sub" style="margin-bottom:20px;">É grátis e leva menos de 2 minutos</div>
+        <div class="form-group"><label class="form-label">Nome completo</label><input class="form-input" placeholder="Ricardo Costa"></div>
+        <div class="form-group"><label class="form-label">E-mail</label><input class="form-input" type="email" placeholder="seu@email.com.br"></div>
+        <div class="form-group"><label class="form-label">Senha</label><input class="form-input" type="password" placeholder="Mínimo 8 caracteres"></div>
+        <button class="login-btn" onclick="cadNext(2)">Continuar →</button>
+        <div class="login-switch">Já tem conta? <a onclick="goTo('login')">Entrar</a></div>
+      </div>
+      <!-- Passo 2 -->
+      <div class="cad-panel" id="cad-p2">
+        <div class="login-title">Sobre sua empresa</div>
+        <div class="login-sub" style="margin-bottom:20px;">Ajuda outros empresários a te encontrar</div>
+        <div class="form-group"><label class="form-label">Nome da empresa</label><input class="form-input" placeholder="Ex: Costa Distribuidora"></div>
+        <div class="form-group"><label class="form-label">Setor</label>
+          <select class="form-input" style="cursor:pointer;">
+            <option value="">Selecione seu setor...</option>
+            <option>Varejo</option><option>Alimentação</option><option>Beleza & Estética</option>
+            <option>Tecnologia</option><option>Logística</option><option>Serviços</option>
+            <option>Construção Civil</option><option>Saúde</option><option>Educação</option><option>Outro</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Porte</label>
+          <select class="form-input" style="cursor:pointer;">
+            <option>MEI (somente eu)</option><option>Micro (até 9 funcionários)</option>
+            <option>Pequena (10–49)</option><option>Média (50–249)</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Cidade e estado</label><input class="form-input" placeholder="Ex: São Paulo, SP"></div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-outline" style="flex:1;justify-content:center;" onclick="cadNext(1)">← Voltar</button>
+          <button class="btn-primary" style="flex:2;padding:11px;" onclick="cadNext(3)">Continuar →</button>
+        </div>
+      </div>
+      <!-- Passo 3 -->
+      <div class="cad-panel" id="cad-p3">
+        <div class="login-title">Quase lá! 🎉</div>
+        <div class="login-sub" style="margin-bottom:20px;">O que você quer na Nexo?</div>
+        <div id="interests" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
+          <div class="int-chip" onclick="toggleChip(this)">🤝 Parcerias</div>
+          <div class="int-chip" onclick="toggleChip(this)">👥 Networking</div>
+          <div class="int-chip" onclick="toggleChip(this)">📦 Fornecedores</div>
+          <div class="int-chip" onclick="toggleChip(this)">💡 Aprendizado</div>
+          <div class="int-chip" onclick="toggleChip(this)">🏪 Clientes B2B</div>
+          <div class="int-chip" onclick="toggleChip(this)">💰 Investimento</div>
+          <div class="int-chip" onclick="toggleChip(this)">📣 Divulgação</div>
+          <div class="int-chip" onclick="toggleChip(this)">🔧 Serviços</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn-outline" style="flex:1;justify-content:center;" onclick="cadNext(2)">← Voltar</button>
+          <button class="btn-primary" style="flex:2;padding:11px;" onclick="goTo('feed')">Entrar na Nexo 🚀</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.int-chip { padding: 8px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; border: 1px solid var(--border); color: var(--muted); transition: all 0.15s; }
+.int-chip.selected { background: var(--accent-dim); border-color: rgba(200,240,96,0.3); color: var(--accent); }
+</style>
+
+<!-- ==================== APP SHELL ==================== -->
+<div id="app-shell" style="display:none; width:100%; height:100%;">
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo" onclick="goTo('feed')">
+      <div class="logo-mark"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2L15 5.5V12.5L9 16L3 12.5V5.5L9 2Z" fill="#0d0f14"/><path d="M9 5L12 7V11L9 13L6 11V7L9 5Z" fill="#c8f060"/></svg></div>
+      <div><div class="logo-name">Nexo</div><div class="logo-tag">Rede de Empresários</div></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Principal</div>
+      <div class="nav-item" id="nav-feed" onclick="goTo('feed')">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+        <span>Feed</span>
+      </div>
+      <div class="nav-item" id="nav-rede" onclick="goTo('rede')">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        <span>Minha Rede</span><span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" id="nav-grupos" onclick="goTo('grupos')">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-2.2 1.8-4 4-4h4c2.2 0 4 1.8 4 4"/><circle cx="6" cy="5" r="2"/><circle cx="10" cy="5" r="2"/></svg>
+        <span>Grupos</span>
+      </div>
+      <div class="nav-item" id="nav-opor" onclick="goTo('opor')">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l2 4h4l-3 3 1 5-4-2.5L4 13l1-5L2 5h4z"/></svg>
+        <span>Oportunidades</span><span class="nav-badge">5</span>
+      </div>
+      <div class="nav-section">Conta</div>
+      <div class="nav-item" id="nav-perfil" onclick="goTo('perfil')">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="3"/><circle cx="8" cy="7" r="2"/><path d="M4 13c0-2.2 1.8-3 4-3s4 .8 4 3"/></svg>
+        <span>Meu Perfil</span>
+      </div>
+      <div class="nav-item" id="nav-msgs" onclick="goTo('msgs')">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h14v10H9l-3 3V11H1z"/></svg>
+        <span>Mensagens</span><span class="nav-badge">5</span>
+      </div>
+      <div class="nav-item" id="nav-notif" onclick="goTo('notif')">
+        <svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a5 5 0 0 1 5 5v3l1 2H2l1-2V6a5 5 0 0 1 5-5z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg>
+        <span>Notificações</span>
+      </div>
+    </nav>
+    <div class="sidebar-user" onclick="goTo('perfil')">
+      <div class="avatar">RC</div>
+      <div class="user-info"><div class="uname">Ricardo C.</div><div class="urole">CEO · TechVarejo</div></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Feed de Negócios</div>
+      <div class="search-bar">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4.5"/><path d="M10 10l2.5 2.5"/></svg>
+        <input type="text" placeholder="Buscar empresas, pessoas, temas…">
+      </div>
+      <div class="notif-btn" onclick="goTo('notif')" style="flex-shrink:0;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a5 5 0 0 1 5 5v3l1 2H2l1-2V6a5 5 0 0 1 5-5z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg>
+        <div class="notif-dot"></div>
+      </div>
+    </div>
+
+    <!-- ===== FEED ===== -->
+    <div id="page-feed" class="page active">
+      <div class="feed-col">
+        <div class="tabs">
+          <div class="tab active" onclick="setTab(this)">Para você</div>
+          <div class="tab" onclick="setTab(this)">Seu setor</div>
+          <div class="tab" onclick="setTab(this)">Oportunidades</div>
+          <div class="tab" onclick="setTab(this)">Tendências</div>
+        </div>
+        <div class="post-box">
+          <div class="post-box-top">
+            <div class="avatar" style="width:32px;height:32px;font-size:11px;">RC</div>
+            <div class="post-input">Compartilhe algo com sua rede de empresários…</div>
+          </div>
+          <div class="post-actions">
+            <button class="post-action-btn"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="11" height="11" rx="2"/><path d="M1 9.5L4.5 6 7 8.5 9.5 5.5 12 9.5"/></svg>Foto</button>
+            <button class="post-action-btn"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l2 4h2l-3 2.5 1 4L6.5 9 3 11.5l1-4L1 5h2z"/></svg>Oportunidade</button>
+            <button class="post-action-btn"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="11" height="11" rx="2"/><path d="M4 7l2 2 3-3"/></svg>Enquete</button>
+          </div>
+        </div>
+        <div class="post-card featured">
+          <div class="post-header">
+            <div class="avatar" style="width:40px;height:40px;font-size:14px;background:linear-gradient(135deg,#f0c040,#ff8c40);">MS</div>
+            <div class="post-meta"><div class="post-name">Marina Souza ✓</div><div class="post-sub">Fundadora · Bella Estética · São Paulo, SP</div></div>
+            <div class="post-time">2h</div>
+          </div>
+          <div class="post-body">Fechei parceria com 3 fornecedores de cosméticos premium e estou abrindo para indicações dentro da rede. Quem tiver salão ou clínica em SP, pode entrar em contato direto. Condições exclusivas para membros da Nexo 🤝</div>
+          <div class="post-tags"><span class="tag accent">#parceria</span><span class="tag">#beleza</span><span class="tag">#fornecedor</span></div>
+          <div class="post-footer">
+            <button class="post-btn" onclick="toggleLike(this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 9l3-6 2 3 2-2 3 5H1z"/></svg>34</button>
+            <button class="post-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>8</button>
+            <button class="post-btn" style="margin-left:auto"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l5-5 5 5M7 2v9"/></svg>Compartilhar</button>
+          </div>
+        </div>
+        <div class="post-card" style="animation-delay:0.05s">
+          <div class="post-header">
+            <div class="avatar" style="width:40px;height:40px;font-size:14px;background:linear-gradient(135deg,#7c6af0,#4af0b0);">JO</div>
+            <div class="post-meta"><div class="post-name">João Oliveira</div><div class="post-sub">Diretor · Oliveira Distribuidora · Campinas, SP</div></div>
+            <div class="post-time">5h</div>
+          </div>
+          <div class="post-body">Dica rápida pra quem está crescendo: o maior erro que cometi foi não estruturar o RH antes de contratar a 10ª pessoa. Quando chegou a 15ª, era caos total. Quem mais passou por isso?</div>
+          <div class="post-tags"><span class="tag accent">#gestão</span><span class="tag">#RH</span><span class="tag">#crescimento</span></div>
+          <div class="post-footer">
+            <button class="post-btn" onclick="toggleLike(this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 9l3-6 2 3 2-2 3 5H1z"/></svg>87</button>
+            <button class="post-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>23</button>
+            <button class="post-btn" style="margin-left:auto"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l5-5 5 5M7 2v9"/></svg>Compartilhar</button>
+          </div>
+        </div>
+        <div class="post-card" style="animation-delay:0.1s">
+          <div class="post-header">
+            <div class="avatar" style="width:40px;height:40px;font-size:14px;background:linear-gradient(135deg,#f06060,#f0c040);">AP</div>
+            <div class="post-meta"><div class="post-name">Ana Paula Reis ✓</div><div class="post-sub">CEO · Reis Contabilidade · Curitiba, PR</div></div>
+            <div class="post-time">1d</div>
+          </div>
+          <div class="post-body">Resultado da enquete: <strong style="color:var(--accent)">68% dos MEIs</strong> ainda não separam conta PJ de conta pessoal. Isso é o que mais atrapalha o crescimento. Guia gratuito nos comentários 👇</div>
+          <div class="post-tags"><span class="tag accent">#finanças</span><span class="tag">#MEI</span><span class="tag">#contabilidade</span></div>
+          <div class="post-footer">
+            <button class="post-btn" onclick="toggleLike(this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 9l3-6 2 3 2-2 3 5H1z"/></svg>142</button>
+            <button class="post-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>41</button>
+            <button class="post-btn" style="margin-left:auto"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l5-5 5 5M7 2v9"/></svg>Compartilhar</button>
+          </div>
+        </div>
+      </div>
+      <div class="right-col">
+        <div class="stats-bar">
+          <div class="stat-item"><div class="stat-val green">247</div><div class="stat-label">conexões</div></div>
+          <div class="stat-item"><div class="stat-val">1.4k</div><div class="stat-label">visualizações</div></div>
+          <div class="stat-item"><div class="stat-val">12</div><div class="stat-label">pedidos</div></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-header"><div class="panel-title">Conectar-se</div><div class="panel-link">Ver todos</div></div>
+          <div class="suggested-item"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(135deg,#4af0b0,#3b8bd4);">FT</div><div class="sug-info"><div class="sug-name">Felipe Torres</div><div class="sug-role">Padaria Torres · SP</div></div><button class="connect-btn" onclick="this.textContent='✓';this.style.color='var(--accent2)'">+ Conectar</button></div>
+          <div class="suggested-item"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(135deg,#f060a0,#f0c040);">LC</div><div class="sug-info"><div class="sug-name">Luana Costa</div><div class="sug-role">Dir. Comercial · LogisBR</div></div><button class="connect-btn" onclick="this.textContent='✓';this.style.color='var(--accent2)'">+ Conectar</button></div>
+          <div class="suggested-item"><div class="avatar" style="width:28px;height:28px;font-size:11px;background:linear-gradient(135deg,#c8f060,#4af0b0);">MR</div><div class="sug-info"><div class="sug-name">Marcos Rocha</div><div class="sug-role">Fundador · AgriTech RO</div></div><button class="connect-btn" onclick="this.textContent='✓';this.style.color='var(--accent2)'">+ Conectar</button></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-header"><div class="panel-title">Grupos ativos</div><div class="panel-link" onclick="goTo('grupos')">Explorar</div></div>
+          <div class="group-item"><div class="group-icon" style="background:rgba(200,240,96,0.12);">🏪</div><div class="group-info"><div class="gname">Varejo SP</div><div class="gcount">2.3k membros</div></div></div>
+          <div class="group-item"><div class="group-icon" style="background:rgba(74,240,176,0.12);">🚚</div><div class="group-info"><div class="gname">Logística & Supply</div><div class="gcount">890 membros</div></div></div>
+          <div class="group-item"><div class="group-icon" style="background:rgba(240,192,64,0.12);">💰</div><div class="group-info"><div class="gname">Finanças MEI</div><div class="gcount">4.1k membros</div></div></div>
+        </div>
+        <div class="panel-card">
+          <div class="panel-header"><div class="panel-title">Em alta hoje</div></div>
+          <div class="trend-item"><div class="trend-tag">#crédito-para-MEI</div><div class="trend-count">312 publicações</div></div>
+          <div class="trend-item"><div class="trend-tag">#parceria-b2b</div><div class="trend-count">198 publicações</div></div>
+          <div class="trend-item"><div class="trend-tag">#nota-fiscal</div><div class="trend-count">145 publicações</div></div>
+          <div class="trend-item"><div class="trend-tag">#expansão-2025</div><div class="trend-count">89 publicações</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PERFIL ===== -->
+    <div id="page-perfil" class="page">
+      <div class="profile-content">
+        <div class="profile-col">
+          <div class="profile-card-main">
+            <div class="cover"><div class="cover-grid"></div><div class="cover-glow"></div>
+              <div class="profile-av-wrap"><div class="profile-av">MS</div><div class="verified-badge">✓</div></div>
+            </div>
+            <div class="profile-info">
+              <div class="profile-name-row">
+                <div><div class="profile-name">Marina Souza</div></div>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn-outline" id="msg-btn2" onclick="this.textContent='✓ Enviado'">Mensagem</button>
+                  <button class="btn-primary" id="conn-btn" onclick="toggleConn()">+ Conectar</button>
+                </div>
+              </div>
+              <div class="profile-headline">Fundadora & CEO na Bella Estética · 12 anos empreendendo</div>
+              <div class="profile-loc"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1a3.5 3.5 0 0 1 3.5 3.5C9.5 7.5 6 11 6 11S2.5 7.5 2.5 4.5A3.5 3.5 0 0 1 6 1z"/><circle cx="6" cy="4.5" r="1"/></svg>São Paulo, SP · Brasil</div>
+              <div class="profile-tags-row"><span class="tag accent">Beleza & Estética</span><span class="tag teal">Franquias</span><span class="tag">Varejo</span><span class="tag">Gestão de Equipes</span></div>
+              <div class="profile-stats">
+                <div class="pstat"><div class="pstat-val green">847</div><div class="pstat-label">Conexões</div></div>
+                <div class="pstat"><div class="pstat-val">12.4k</div><div class="pstat-label">Visualizações</div></div>
+                <div class="pstat"><div class="pstat-val">38</div><div class="pstat-label">Publicações</div></div>
+                <div class="pstat"><div class="pstat-val">6</div><div class="pstat-label">Parcerias</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="section-header"><div class="section-title">Sobre</div><div class="section-link">Editar</div></div>
+            <div class="about-text">Fundei a Bella Estética em 2013 com uma única sala em São Paulo. Hoje somos 4 unidades, 28 colaboradores e estamos em processo de franquias para 2025.<br><br>Especialista em expansão de negócios no setor de beleza, gestão de equipes e relacionamento com fornecedores premium.</div>
+          </div>
+          <div class="section-card">
+            <div class="section-header"><div class="section-title">Empresa</div><div class="section-link">Editar</div></div>
+            <div class="empresa-row"><div class="empresa-logo">BE</div><div><div style="font-size:15px;font-weight:500;color:var(--text);">Bella Estética</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Beleza · Rede de clínicas · São Paulo, SP</div></div></div>
+            <div class="empresa-metrics">
+              <div class="metric-box"><div class="metric-val accent">4</div><div class="metric-label">Unidades</div></div>
+              <div class="metric-box"><div class="metric-val">28</div><div class="metric-label">Funcionários</div></div>
+              <div class="metric-box"><div class="metric-val">R$2M+</div><div class="metric-label">Faturamento</div></div>
+            </div>
+          </div>
+          <div class="section-card">
+            <div class="section-header"><div class="section-title">Trajetória</div><div class="section-link">+ Adicionar</div></div>
+            <div class="exp-item"><div class="exp-dot"></div><div><div style="font-size:14px;font-weight:500;color:var(--text);">Fundadora & CEO — Bella Estética</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Jan 2013 – presente · 12 anos</div></div></div>
+            <div class="exp-item"><div class="exp-dot muted"></div><div><div style="font-size:14px;font-weight:500;color:var(--text);">Gerente Comercial — Beauty Group BR</div><div style="font-size:12px;color:var(--muted);margin-top:2px;">Mar 2010 – Dez 2012 · 3 anos</div></div></div>
+          </div>
+          <div class="section-card">
+            <div class="section-header"><div class="section-title">Conquistas Nexo</div></div>
+            <div class="badges-grid">
+              <div class="badge-item"><div class="badge-icon gold">🏆</div><div class="badge-name">Top Conector</div></div>
+              <div class="badge-item"><div class="badge-icon green">✅</div><div class="badge-name">Verificado</div></div>
+              <div class="badge-item"><div class="badge-icon teal">🤝</div><div class="badge-name">6 Parcerias</div></div>
+              <div class="badge-item"><div class="badge-icon gray">🔥</div><div class="badge-name">30 dias ativo</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="side-col">
+          <div class="side-card"><div class="side-header"><div class="side-title-sm">Contato</div></div>
+            <div class="contact-item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="12" height="9" rx="2"/><path d="M1 5l6 4 6-4"/></svg><span style="color:var(--text)">marina@bellastetica.com.br</span></div>
+            <div class="contact-item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="10" height="12" rx="2"/><circle cx="7" cy="10" r="1"/></svg><span style="color:var(--text)">(11) 98765-4321</span></div>
+            <div class="contact-item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5.5"/><path d="M7 2c0 0-2.5 2.5-2.5 5s2.5 5 2.5 5M2 7h10"/></svg><span style="color:var(--accent)">bellastetica.com.br</span></div>
+          </div>
+          <div class="side-card"><div class="side-header"><div class="side-title-sm">Em comum</div><div style="font-size:11px;color:var(--accent);cursor:pointer;">Ver todos (14)</div></div>
+            <div class="mutual-item"><div class="mutual-av" style="background:linear-gradient(135deg,#7c6af0,#4af0b0);">JO</div><div><div style="font-size:12px;font-weight:500;color:var(--text);">João Oliveira</div><div style="font-size:11px;color:var(--muted);">Dir. · Oliveira Distribuidora</div></div></div>
+            <div class="mutual-item"><div class="mutual-av" style="background:linear-gradient(135deg,#f06060,#f0c040);">AP</div><div><div style="font-size:12px;font-weight:500;color:var(--text);">Ana Paula Reis</div><div style="font-size:11px;color:var(--muted);">CEO · Reis Contabilidade</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== GRUPOS ===== -->
+    <div id="page-grupos" class="page">
+      <div class="grupos-content">
+        <div class="grupos-header">
+          <div class="grupos-title">Grupos</div>
+          <button class="btn-primary" style="font-size:13px;">+ Criar grupo</button>
+        </div>
+        <div class="grupos-section-title">Seus grupos</div>
+        <div class="grupos-grid" style="margin-bottom:28px;">
+          <div class="grupo-card"><div class="grupo-cover" style="background:rgba(200,240,96,0.08);">🏪</div><div class="grupo-body"><div class="grupo-name">Varejo SP</div><div class="grupo-desc">Discussões sobre varejo, fornecedores e tendências de mercado no estado de SP.</div><div class="grupo-footer"><div class="grupo-members">2.347 membros</div><div class="join-btn joined">✓ Membro</div></div></div></div>
+          <div class="grupo-card" style="animation-delay:0.05s"><div class="grupo-cover" style="background:rgba(240,192,64,0.08);">💰</div><div class="grupo-body"><div class="grupo-name">Finanças MEI</div><div class="grupo-desc">Dicas de gestão financeira, crédito, contabilidade e crescimento para MEI e micro empresas.</div><div class="grupo-footer"><div class="grupo-members">4.120 membros</div><div class="join-btn joined">✓ Membro</div></div></div></div>
+        </div>
+        <div class="grupos-section-title">Sugeridos para você</div>
+        <div class="grupos-grid">
+          <div class="grupo-card" style="animation-delay:0.1s"><div class="grupo-cover" style="background:rgba(74,240,176,0.08);">🚚</div><div class="grupo-body"><div class="grupo-name">Logística & Supply Chain</div><div class="grupo-desc">Transportadoras, distribuidoras e gestão de cadeia de suprimentos para empresas brasileiras.</div><div class="grupo-footer"><div class="grupo-members">890 membros</div><div class="join-btn" onclick="joinGrupo(this)">+ Entrar</div></div></div></div>
+          <div class="grupo-card" style="animation-delay:0.12s"><div class="grupo-cover" style="background:rgba(240,96,96,0.08);">🍽️</div><div class="grupo-body"><div class="grupo-name">Food Service BR</div><div class="grupo-desc">Restaurantes, lanchonetes, delivery e toda a cadeia de alimentação fora do lar.</div><div class="grupo-footer"><div class="grupo-members">1.720 membros</div><div class="join-btn" onclick="joinGrupo(this)">+ Entrar</div></div></div></div>
+          <div class="grupo-card" style="animation-delay:0.14s"><div class="grupo-cover" style="background:rgba(124,106,240,0.1);">💻</div><div class="grupo-body"><div class="grupo-name">Tech & Startups BR</div><div class="grupo-desc">Empreendedores de tecnologia, startups em early stage, SaaS, apps e inovação.</div><div class="grupo-footer"><div class="grupo-members">3.450 membros</div><div class="join-btn" onclick="joinGrupo(this)">+ Entrar</div></div></div></div>
+          <div class="grupo-card" style="animation-delay:0.16s"><div class="grupo-cover" style="background:rgba(240,192,64,0.08);">🏗️</div><div class="grupo-body"><div class="grupo-name">Construção Civil</div><div class="grupo-desc">Construtoras, empreiteiras, materiais de construção e mercado imobiliário.</div><div class="grupo-footer"><div class="grupo-members">670 membros</div><div class="join-btn" onclick="joinGrupo(this)">+ Entrar</div></div></div></div>
+          <div class="grupo-card" style="animation-delay:0.18s"><div class="grupo-cover" style="background:rgba(240,96,160,0.08);">💆</div><div class="grupo-body"><div class="grupo-name">Beleza & Bem-estar</div><div class="grupo-desc">Salões, clínicas estéticas, spas e fornecedores do setor de beleza e saúde.</div><div class="grupo-footer"><div class="grupo-members">2.100 membros</div><div class="join-btn" onclick="joinGrupo(this)">+ Entrar</div></div></div></div>
+          <div class="grupo-card" style="animation-delay:0.2s"><div class="grupo-cover" style="background:rgba(74,240,176,0.08);">🌱</div><div class="grupo-body"><div class="grupo-name">Agronegócio BR</div><div class="grupo-desc">Produtores rurais, agroindustriais, insumos e tecnologia no campo.</div><div class="grupo-footer"><div class="grupo-members">1.280 membros</div><div class="join-btn" onclick="joinGrupo(this)">+ Entrar</div></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== OPORTUNIDADES ===== -->
+    <div id="page-opor" class="page">
+      <div class="opor-content">
+        <div class="opor-header">
+          <div style="font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--text);">Oportunidades</div>
+          <button class="btn-primary" style="font-size:13px;">+ Publicar oportunidade</button>
+        </div>
+        <div class="opor-filters">
+          <button class="filter-btn active" onclick="setFilter(this)">Todas</button>
+          <button class="filter-btn" onclick="setFilter(this)">Parcerias</button>
+          <button class="filter-btn" onclick="setFilter(this)">Fornecedores</button>
+          <button class="filter-btn" onclick="setFilter(this)">Investimento</button>
+          <button class="filter-btn" onclick="setFilter(this)">Clientes B2B</button>
+          <button class="filter-btn" onclick="setFilter(this)">Distribuição</button>
+        </div>
+        <div class="opor-card highlight">
+          <div class="opor-top"><div class="opor-icon" style="background:rgba(200,240,96,0.1);">🤝</div><div class="opor-meta"><div class="opor-title">Parceria para distribuição de cosméticos — SP e interior</div><div class="opor-company">Marina Souza · Bella Estética · São Paulo, SP</div></div><div class="opor-badge"><span class="tag accent">Parceria</span></div></div>
+          <div class="opor-desc">Busco distribuidoras ou representantes para levar minha linha de cosméticos próprios para salões e clínicas em todo o estado de SP. Produto com margem de 40%+, exclusividade por região. Interessados entram em contato direto.</div>
+          <div class="opor-tags"><span class="tag">#cosméticos</span><span class="tag">#distribuição</span><span class="tag">#beleza</span><span class="tag">#SP</span></div>
+          <div class="opor-footer"><div class="opor-info"><span>Publicado há 2h</span><span>18 interessados</span></div><div class="opor-actions"><button class="btn-outline" style="font-size:12px;">Salvar</button><button class="btn-primary" style="font-size:12px;">Tenho interesse</button></div></div>
+        </div>
+        <div class="opor-card" style="animation-delay:0.05s">
+          <div class="opor-top"><div class="opor-icon" style="background:rgba(74,240,176,0.1);">🏭</div><div class="opor-meta"><div class="opor-title">Fornecedor de embalagens plásticas — volume mínimo 5.000/mês</div><div class="opor-company">Plastex Indústria · Santo André, SP</div></div><div class="opor-badge"><span class="tag teal">Fornecedor</span></div></div>
+          <div class="opor-desc">Oferecemos embalagens personalizadas com prazo de 15 dias e frete para todo Brasil. Ideal para food service, farmácias e lojas de produtos naturais. Solicite amostra grátis.</div>
+          <div class="opor-tags"><span class="tag">#embalagens</span><span class="tag">#indústria</span><span class="tag">#fornecedor</span></div>
+          <div class="opor-footer"><div class="opor-info"><span>Publicado há 1d</span><span>34 interessados</span></div><div class="opor-actions"><button class="btn-outline" style="font-size:12px;">Salvar</button><button class="btn-primary" style="font-size:12px;">Tenho interesse</button></div></div>
+        </div>
+        <div class="opor-card" style="animation-delay:0.08s">
+          <div class="opor-top"><div class="opor-icon" style="background:rgba(240,192,64,0.1);">💰</div><div class="opor-meta"><div class="opor-title">Busco investidor anjo — foodtech em estágio inicial</div><div class="opor-company">StartFood · Florianópolis, SC</div></div><div class="opor-badge"><span class="tag gold">Investimento</span></div></div>
+          <div class="opor-desc">Aplicativo de gestão para restaurantes com IA para previsão de demanda. 40 clientes pagantes, MRR de R$12k e crescendo 20%/mês. Buscamos R$300k para escalar comercial.</div>
+          <div class="opor-tags"><span class="tag">#startup</span><span class="tag">#foodtech</span><span class="tag">#investimento</span><span class="tag">#IA</span></div>
+          <div class="opor-footer"><div class="opor-info"><span>Publicado há 3d</span><span>52 interessados</span></div><div class="opor-actions"><button class="btn-outline" style="font-size:12px;">Salvar</button><button class="btn-primary" style="font-size:12px;">Tenho interesse</button></div></div>
+        </div>
+        <div class="opor-card" style="animation-delay:0.11s">
+          <div class="opor-top"><div class="opor-icon" style="background:rgba(200,240,96,0.1);">🏪</div><div class="opor-meta"><div class="opor-title">Procuro fornecedor de café especial para minha rede de cafeterias</div><div class="opor-company">Café Aroma · Belo Horizonte, MG</div></div><div class="opor-badge"><span class="tag accent">Cliente B2B</span></div></div>
+          <div class="opor-desc">Rede com 5 unidades em BH procura torrefação parceira para fornecimento mensal de 300kg de café especial. Valorizo origem rastreável e certificação de qualidade.</div>
+          <div class="opor-tags"><span class="tag">#café</span><span class="tag">#alimentação</span><span class="tag">#B2B</span><span class="tag">#MG</span></div>
+          <div class="opor-footer"><div class="opor-info"><span>Publicado há 5d</span><span>9 interessados</span></div><div class="opor-actions"><button class="btn-outline" style="font-size:12px;">Salvar</button><button class="btn-primary" style="font-size:12px;">Tenho interesse</button></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MINHA REDE ===== -->
+    <div id="page-rede" class="page">
+      <div class="rede-content">
+        <div style="font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--text);margin-bottom:20px;">Minha Rede</div>
+        <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:14px;">Pedidos pendentes (3)</div>
+        <div class="solicit-list">
+          <div class="solicit-item"><div class="avatar" style="width:40px;height:40px;background:linear-gradient(135deg,#f0c040,#ff8c40);">MS</div><div class="solicit-info"><div class="solicit-name">Marina Souza</div><div class="solicit-role">Fundadora · Bella Estética · 14 conexões em comum</div></div><div class="solicit-actions"><button class="btn-accept" onclick="acceptReq(this)">Aceitar</button><button class="btn-decline" onclick="this.closest('.solicit-item').remove()">Recusar</button></div></div>
+          <div class="solicit-item"><div class="avatar" style="width:40px;height:40px;background:linear-gradient(135deg,#7c6af0,#4af0b0);">JO</div><div class="solicit-info"><div class="solicit-name">João Oliveira</div><div class="solicit-role">Diretor · Oliveira Distribuidora · 7 conexões em comum</div></div><div class="solicit-actions"><button class="btn-accept" onclick="acceptReq(this)">Aceitar</button><button class="btn-decline" onclick="this.closest('.solicit-item').remove()">Recusar</button></div></div>
+          <div class="solicit-item"><div class="avatar" style="width:40px;height:40px;background:linear-gradient(135deg,#4af0b0,#3b8bd4);">FT</div><div class="solicit-info"><div class="solicit-name">Felipe Torres</div><div class="solicit-role">Dono · Padaria Torres · 3 conexões em comum</div></div><div class="solicit-actions"><button class="btn-accept" onclick="acceptReq(this)">Aceitar</button><button class="btn-decline" onclick="this.closest('.solicit-item').remove()">Recusar</button></div></div>
+        </div>
+        <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:14px;">Sugestões para você</div>
+        <div class="rede-grid">
+          <div class="rede-card"><div class="rede-av" style="background:linear-gradient(135deg,#f06060,#f0c040);">AP</div><div class="rede-name">Ana Paula Reis</div><div class="rede-role">CEO · Reis Contabilidade</div><div class="rede-mutual">8 conexões em comum</div><button class="connect-btn" onclick="this.textContent='✓ Conectado';this.style.color='var(--accent2)'">+ Conectar</button></div>
+          <div class="rede-card" style="animation-delay:.04s"><div class="rede-av" style="background:linear-gradient(135deg,#c8f060,#4af0b0);">MR</div><div class="rede-name">Marcos Rocha</div><div class="rede-role">Fundador · AgriTech RO</div><div class="rede-mutual">5 conexões em comum</div><button class="connect-btn" onclick="this.textContent='✓ Conectado';this.style.color='var(--accent2)'">+ Conectar</button></div>
+          <div class="rede-card" style="animation-delay:.08s"><div class="rede-av" style="background:linear-gradient(135deg,#f060a0,#f0c040);">LC</div><div class="rede-name">Luana Costa</div><div class="rede-role">Dir. Comercial · LogisBR</div><div class="rede-mutual">11 conexões em comum</div><button class="connect-btn" onclick="this.textContent='✓ Conectado';this.style.color='var(--accent2)'">+ Conectar</button></div>
+          <div class="rede-card" style="animation-delay:.12s"><div class="rede-av" style="background:linear-gradient(135deg,#7c6af0,#f0c040);">BN</div><div class="rede-name">Bruno Nascimento</div><div class="rede-role">CEO · TechFoods</div><div class="rede-mutual">4 conexões em comum</div><button class="connect-btn" onclick="this.textContent='✓ Conectado';this.style.color='var(--accent2)'">+ Conectar</button></div>
+          <div class="rede-card" style="animation-delay:.16s"><div class="rede-av" style="background:linear-gradient(135deg,#4af0b0,#f0c040);">CF</div><div class="rede-name">Carla Ferreira</div><div class="rede-role">Sócia · Ferreira Moda</div><div class="rede-mutual">6 conexões em comum</div><button class="connect-btn" onclick="this.textContent='✓ Conectado';this.style.color='var(--accent2)'">+ Conectar</button></div>
+          <div class="rede-card" style="animation-delay:.2s"><div class="rede-av" style="background:linear-gradient(135deg,#f0c040,#ff5a5a);">RL</div><div class="rede-name">Roberto Lima</div><div class="rede-role">Franqueado · Lima Varejo</div><div class="rede-mutual">9 conexões em comum</div><button class="connect-btn" onclick="this.textContent='✓ Conectado';this.style.color='var(--accent2)'">+ Conectar</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MENSAGENS ===== -->
+    <div id="page-msgs" class="page">
+      <div class="msgs-sidebar">
+        <div class="msgs-header">
+          <div class="msgs-title">Mensagens</div>
+          <div class="msg-search"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="5.5" r="4"/><path d="M9 9l2.5 2.5"/></svg><input placeholder="Buscar conversa…"></div>
+        </div>
+        <div class="conv-item active" onclick="selectConv(this,'Marina Souza','Fundadora · Bella Estética')">
+          <div class="avatar" style="width:38px;height:38px;font-size:13px;background:linear-gradient(135deg,#f0c040,#ff8c40);">MS</div>
+          <div class="conv-info"><div class="conv-name">Marina Souza<span class="conv-time">2h</span></div><div class="conv-preview">Oi! Vi seu perfil e quero propor...</div></div>
+          <div class="conv-unread"></div>
+        </div>
+        <div class="conv-item" onclick="selectConv(this,'João Oliveira','Dir. · Oliveira Distribuidora')">
+          <div class="avatar" style="width:38px;height:38px;font-size:13px;background:linear-gradient(135deg,#7c6af0,#4af0b0);">JO</div>
+          <div class="conv-info"><div class="conv-name">João Oliveira<span class="conv-time">5h</span></div><div class="conv-preview">Faz sentido o que você falou sobre RH...</div></div>
+          <div class="conv-unread"></div>
+        </div>
+        <div class="conv-item" onclick="selectConv(this,'Ana Paula Reis','CEO · Reis Contabilidade')">
+          <div class="avatar" style="width:38px;height:38px;font-size:13px;background:linear-gradient(135deg,#f06060,#f0c040);">AP</div>
+          <div class="conv-info"><div class="conv-name">Ana Paula Reis<span class="conv-time">1d</span></div><div class="conv-preview">Posso te ajudar com a abertura da PJ</div></div>
+        </div>
+        <div class="conv-item" onclick="selectConv(this,'Felipe Torres','Dono · Padaria Torres')">
+          <div class="avatar" style="width:38px;height:38px;font-size:13px;background:linear-gradient(135deg,#4af0b0,#3b8bd4);">FT</div>
+          <div class="conv-info"><div class="conv-name">Felipe Torres<span class="conv-time">2d</span></div><div class="conv-preview">Que bom! Vamos marcar um café</div></div>
+        </div>
+        <div class="conv-item" onclick="selectConv(this,'Luana Costa','Dir. Comercial · LogisBR')">
+          <div class="avatar" style="width:38px;height:38px;font-size:13px;background:linear-gradient(135deg,#f060a0,#f0c040);">LC</div>
+          <div class="conv-info"><div class="conv-name">Luana Costa<span class="conv-time">3d</span></div><div class="conv-preview">Enviando a proposta por email também</div></div>
+        </div>
+      </div>
+      <div class="chat-area">
+        <div class="chat-header">
+          <div class="avatar" style="width:36px;height:36px;font-size:13px;background:linear-gradient(135deg,#f0c040,#ff8c40);" id="chat-av">MS</div>
+          <div class="chat-status"></div>
+          <div><div class="chat-name" id="chat-name">Marina Souza</div><div class="chat-role" id="chat-role">Fundadora · Bella Estética</div></div>
+          <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="btn-outline" style="font-size:12px;padding:6px 12px;">Ver perfil</button>
+          </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg-bubble them"><div class="bubble-text">Oi Ricardo! Vi seu perfil na Nexo e quero propor uma parceria. Trabalho com beleza e estética e você com tech — acho que podemos nos ajudar muito.</div><div class="bubble-time">10:24</div></div>
+          <div class="msg-bubble me"><div class="bubble-text">Oi Marina! Que ótimo te encontrar aqui. Pode me contar mais sobre o que você tem em mente?</div><div class="bubble-time">10:31</div></div>
+          <div class="msg-bubble them"><div class="bubble-text">Estou abrindo franquias e precisaria de um sistema de gestão bom e acessível. Você conhece soluções nessa área?</div><div class="bubble-time">10:33</div></div>
+          <div class="msg-bubble me"><div class="bubble-text">Sim! Tenho exatamente isso. Posso preparar uma demo específica para o modelo de franquia. Quando tem disponibilidade essa semana?</div><div class="bubble-time">10:40</div></div>
+          <div class="msg-bubble them"><div class="bubble-text">Perfeito! Quinta de tarde seria ótimo 😊</div><div class="bubble-time">10:42</div></div>
+        </div>
+        <div class="chat-input-area">
+          <textarea class="chat-input" id="msg-input" placeholder="Digite uma mensagem…" rows="1" onkeydown="sendMsg(event)"></textarea>
+          <button class="send-btn" onclick="sendMsgClick()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#0d0f14" stroke-width="2"><path d="M2 8l12-6-5 12-2-5-5-1z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== NOTIFICAÇÕES ===== -->
+    <div id="page-notif" class="page">
+      <div class="notif-content">
+        <div style="font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--text);margin-bottom:6px;">Notificações</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:24px;">Você tem 4 notificações não lidas</div>
+        <div class="notif-item unread" onclick="this.classList.remove('unread')">
+          <div class="notif-icon" style="background:rgba(200,240,96,0.12);">🤝</div>
+          <div class="notif-text"><div class="notif-msg"><strong>Marina Souza</strong> quer se conectar com você. Ela tem 14 conexões em comum.</div><div class="notif-time">há 2 horas</div></div>
+          <div class="notif-dot"></div>
+        </div>
+        <div class="notif-item unread" onclick="this.classList.remove('unread')">
+          <div class="notif-icon" style="background:rgba(240,192,64,0.12);">👍</div>
+          <div class="notif-text"><div class="notif-msg"><strong>João Oliveira</strong> e outras <strong>11 pessoas</strong> curtiram sua publicação sobre gestão de equipes.</div><div class="notif-time">há 4 horas</div></div>
+          <div class="notif-dot"></div>
+        </div>
+        <div class="notif-item unread" onclick="this.classList.remove('unread')">
+          <div class="notif-icon" style="background:rgba(74,240,176,0.12);">💬</div>
+          <div class="notif-text"><div class="notif-msg"><strong>Ana Paula Reis</strong> comentou: "Excelente ponto! Aqui na contabilidade a gente vê muito isso acontecer."</div><div class="notif-time">há 6 horas</div></div>
+          <div class="notif-dot"></div>
+        </div>
+        <div class="notif-item unread" onclick="this.classList.remove('unread')">
+          <div class="notif-icon" style="background:rgba(200,240,96,0.12);">⭐</div>
+          <div class="notif-text"><div class="notif-msg">Sua publicação está em alta no grupo <strong>Varejo SP</strong>. Você tem 87 curtidas!</div><div class="notif-time">há 8 horas</div></div>
+          <div class="notif-dot"></div>
+        </div>
+        <div class="notif-item" onclick="this.classList.remove('unread')">
+          <div class="notif-icon" style="background:rgba(124,106,240,0.12);">👥</div>
+          <div class="notif-text"><div class="notif-msg"><strong>Felipe Torres</strong> aceitou seu pedido de conexão. Você agora tem 248 conexões!</div><div class="notif-time">há 1 dia</div></div>
+        </div>
+        <div class="notif-item">
+          <div class="notif-icon" style="background:rgba(240,96,96,0.12);">🔥</div>
+          <div class="notif-text"><div class="notif-msg">Novo grupo sugerido para você: <strong>Food Service BR</strong> com 1.720 membros do seu setor.</div><div class="notif-time">há 2 dias</div></div>
+        </div>
+        <div class="notif-item">
+          <div class="notif-icon" style="background:rgba(240,192,64,0.12);">📊</div>
+          <div class="notif-text"><div class="notif-msg">Seu perfil teve <strong>1.420 visualizações</strong> essa semana — 34% a mais que a semana passada!</div><div class="notif-time">há 3 dias</div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<script>
+// ===== NAVIGATION =====
+const pages = ['login','cadastro','feed','perfil','grupos','opor','rede','msgs','notif'];
+const appPages = ['feed','perfil','grupos','opor','rede','msgs','notif'];
+const titles = { feed:'Feed de Negócios', perfil:'Perfil', grupos:'Grupos', opor:'Oportunidades', rede:'Minha Rede', msgs:'Mensagens', notif:'Notificações' };
+
+function goTo(page) {
+  pages.forEach(p => {
+    const el = document.getElementById('page-' + p);
+    if (el) { el.style.display = 'none'; el.classList.remove('active'); }
+  });
+  const shell = document.getElementById('app-shell');
+  const loginEl = document.getElementById('page-login');
+  const cadEl = document.getElementById('page-cadastro');
+
+  if (page === 'login') {
+    shell.style.display = 'none';
+    loginEl.style.display = 'flex'; loginEl.classList.add('active');
+    cadEl.style.display = 'none';
+  } else if (page === 'cadastro') {
+    shell.style.display = 'none';
+    loginEl.style.display = 'none';
+    cadEl.style.display = 'flex'; cadEl.classList.add('active');
+  } else {
+    shell.style.display = 'block';
+    loginEl.style.display = 'none'; cadEl.style.display = 'none';
+    const target = document.getElementById('page-' + page);
+    if (target) { target.style.display = 'flex'; target.classList.add('active'); }
+    const titleEl = document.getElementById('topbar-title');
+    if (titleEl) titleEl.textContent = titles[page] || '';
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const nav = document.getElementById('nav-' + page);
+    if (nav) nav.classList.add('active');
+  }
+}
+
+// ===== CADASTRO STEPS =====
+function cadNext(step) {
+  document.querySelectorAll('.cad-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('cad-p' + step).classList.add('active');
+  [1,2,3].forEach(i => {
+    const s = document.getElementById('s' + i);
+    s.classList.remove('active','done');
+    if (i < step) s.classList.add('done');
+    else if (i === step) s.classList.add('active');
+  });
+}
+
+// ===== LIKE =====
+function toggleLike(btn) {
+  btn.classList.toggle('liked');
+  const m = btn.textContent.trim().match(/\d+/);
+  if (m) {
+    const n = parseInt(m[0]);
+    btn.innerHTML = btn.innerHTML.replace(/\d+/, btn.classList.contains('liked') ? n+1 : n-1);
+  }
+}
+
+// ===== TABS =====
+function setTab(el) {
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ===== FILTERS =====
+function setFilter(el) {
+  el.closest('.opor-filters').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ===== CONNECT =====
+function toggleConn() {
+  const btn = document.getElementById('conn-btn');
+  if (btn.textContent.includes('+')) {
+    btn.textContent = '✓ Conectado'; btn.style.background = 'rgba(74,240,176,0.15)'; btn.style.color = '#4af0b0'; btn.style.border = '1px solid rgba(74,240,176,0.3)';
+  } else { btn.textContent = '+ Conectar'; btn.style.background = ''; btn.style.color = ''; btn.style.border = ''; }
+}
+
+// ===== ACCEPT REQUEST =====
+function acceptReq(btn) {
+  const item = btn.closest('.solicit-item');
+  item.style.opacity = '0'; item.style.transform = 'translateX(20px)'; item.style.transition = 'all 0.3s';
+  setTimeout(() => item.remove(), 300);
+}
+
+// ===== JOIN GROUP =====
+function joinGrupo(btn) {
+  btn.textContent = '✓ Membro'; btn.classList.add('joined');
+}
+
+// ===== INTEREST CHIPS =====
+function toggleChip(el) { el.classList.toggle('selected'); }
+
+// ===== MESSAGES =====
+function selectConv(el, name, role) {
+  document.querySelectorAll('.conv-item').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('chat-name').textContent = name;
+  document.getElementById('chat-role').textContent = role;
+  document.getElementById('chat-av').textContent = name.split(' ').map(w=>w[0]).slice(0,2).join('');
+}
+
+function sendMsg(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsgClick(); }
+}
+
+function sendMsgClick() {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const msgs = document.getElementById('chat-messages');
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble me'; bubble.style.animation = 'fadeUp 0.2s ease both';
+  const now = new Date(); const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+  bubble.innerHTML = `<div class="bubble-text">${text}</div><div class="bubble-time">${time}</div>`;
+  msgs.appendChild(bubble); msgs.scrollTop = msgs.scrollHeight; input.value = '';
+}
+
+// Init
+goTo('login');
+</script>
+</body>
+</html>
