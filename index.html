@@ -1538,11 +1538,23 @@ async function openPublicProfile(userId) {
     sb.from('follows').select('id', {count:'exact',head:true}).eq('follower_id', userId)
   ]);
 
-  const p = profileRes.data || {};
   const posts = postsRes.data || [];
   const isFollowing = !!followRes.data;
   const followersCount = followersRes.count || 0;
   const followingCount = followingRes.count || 0;
+
+  // Merge profile data with post author_meta as fallback
+  const profileData = profileRes.data || {};
+  const postMeta = posts[0]?.author_meta || {};
+  const p = {
+    nome: profileData.nome || postMeta.nome || null,
+    empresa: profileData.empresa || postMeta.empresa || null,
+    setor: profileData.setor || postMeta.setor || null,
+    cidade: profileData.cidade || null,
+    bio: profileData.bio || null,
+    avatar_url: profileData.avatar_url || null,
+    email: profileData.email || null,
+  };
 
   const nome = p.nome || 'Empresário';
   const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
@@ -1570,7 +1582,7 @@ async function openPublicProfile(userId) {
             </button>
           </div>
         </div>
-        ${p.empresa ? `<div class="pub-headline">${p.empresa}${p.setor ? ' · ' + p.setor : ''}</div>` : ''}
+        <div class="pub-headline">${p.empresa ? p.empresa + (p.setor ? ' · ' + p.setor : '') : (p.setor || 'Empresário na Nexo')}</div>
         ${p.cidade ? `<div class="pub-loc"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1a3.5 3.5 0 0 1 3.5 3.5C9.5 7.5 6 11 6 11S2.5 7.5 2.5 4.5A3.5 3.5 0 0 1 6 1z"/><circle cx="6" cy="4.5" r="1"/></svg>${p.cidade}</div>` : ''}
         ${p.setor ? `<div class="pub-tags"><span class="tag accent">${p.setor}</span></div>` : ''}
         <div class="pub-stats">
@@ -1580,7 +1592,7 @@ async function openPublicProfile(userId) {
         </div>
       </div>
     </div>
-    ${p.bio ? `<div class="pub-section"><div class="pub-section-title">Sobre</div><div class="pub-bio">${p.bio}</div></div>` : ''}
+    <div class="pub-section"><div class="pub-section-title">Sobre</div><div class="pub-bio">${p.bio || 'Este empresário ainda não adicionou uma bio. Envie uma mensagem para se conectar!'}</div></div>
     ${posts.length > 0 ? `
     <div class="pub-section">
       <div class="pub-section-title">Publicações (${posts.length})</div>
