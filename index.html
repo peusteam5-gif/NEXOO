@@ -852,10 +852,20 @@ async function saveProfile() {
     bio: document.getElementById('edit-bio').value.trim(),
   };
   const { error } = await sb.auth.updateUser({ data: updates });
+  if (error) { btn.disabled = false; btn.textContent = 'Salvar alterações'; toast('Erro ao salvar: ' + error.message, 'error'); return; }
+  // Sync to profiles table for search
+  await sb.from('profiles').upsert({
+    id: currentUser.id,
+    nome: updates.full_name,
+    empresa: updates.empresa,
+    setor: updates.setor,
+    cidade: updates.cidade,
+    bio: updates.bio,
+    email: currentUser.email,
+    avatar_url: currentUser.user_metadata?.avatar_url || ''
+  });
   btn.disabled = false; btn.textContent = 'Salvar alterações';
-  if (error) { toast('Erro ao salvar: ' + error.message, 'error'); return; }
   toast('Perfil atualizado com sucesso!', 'success');
-  await loadProfile(sb.auth.getUser().then(r => r.data.user));
   const { data: { user } } = await sb.auth.getUser();
   await loadProfile(user);
 }
@@ -1008,7 +1018,6 @@ function timeAgo(dateStr) {
 async function openNewConvModal() {
   const existing = document.getElementById('new-conv-modal');
   if (existing) existing.remove();
-
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.id = 'new-conv-modal';
@@ -1016,62 +1025,61 @@ async function openNewConvModal() {
     <div class="modal-box">
       <button class="modal-close" onclick="document.getElementById('new-conv-modal').remove();">×</button>
       <div class="modal-title">Nova conversa</div>
-      <div class="modal-sub">Busque pelo e-mail do empresário</div>
-      <div class="form-group">
-        <input class="form-input" id="search-user-input" placeholder="email@empresa.com.br" oninput="searchUsers(this.value)">
+      <div class="modal-sub">Busque por nome, empresa ou setor</div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <input class="form-input" id="search-user-input" placeholder="Ex: João, Padaria Torres, Varejo..." oninput="searchUsers(this.value)" autocomplete="off">
       </div>
-      <div id="user-results"><div style="font-size:12px;color:var(--muted);text-align:center;padding:12px;">Digite um e-mail para buscar</div></div>
+      <div id="user-results">
+        <div style="font-size:12px;color:var(--muted);text-align:center;padding:16px;">
+          Digite para buscar empresários cadastrados
+        </div>
+      </div>
     </div>
   `;
   modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
   document.body.appendChild(modal);
   setTimeout(() => document.getElementById('search-user-input').focus(), 100);
+  // Show all users initially
+  searchUsers('');
 }
 
 let searchTimeout = null;
 async function searchUsers(query) {
   clearTimeout(searchTimeout);
   const resultsEl = document.getElementById('user-results');
-  if (!query || query.length < 3) {
-    resultsEl.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px;">Digite pelo menos 3 caracteres</div>';
-    return;
-  }
   resultsEl.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px;">Buscando...</div>';
   searchTimeout = setTimeout(async () => {
-    const { data: { users }, error } = await sb.auth.admin?.listUsers?.() || { data: { users: [] } };
-    // Use profiles approach - search by email in auth
-    const { data, error: err } = await sb.rpc('search_users_by_email', { search_email: query }).catch(() => ({ data: null }));
-    
-    // Fallback: just show a direct start option
-    resultsEl.innerHTML = `
-      <div class="user-result" onclick="startConvWithEmail('${query}')">
-        <div class="user-result-av" style="background:linear-gradient(135deg,#4af0b0,#c8f060);">+</div>
-        <div>
-          <div style="font-size:13px;font-weight:500;color:var(--text);">${query}</div>
-          <div style="font-size:11px;color:var(--muted);">Iniciar conversa com este e-mail</div>
+    let dbQuery = sb.from('profiles').select('id, nome, empresa, setor, cidade, avatar_url').neq('id', currentUser.id).limit(20);
+    if (query && query.trim().length > 0) {
+      dbQuery = dbQuery.or('nome.ilike.%' + query + '%,empresa.ilike.%' + query + '%,setor.ilike.%' + query + '%,cidade.ilike.%' + query + '%');
+    }
+    const { data: users, error } = await dbQuery;
+    if (error || !users || users.length === 0) {
+      resultsEl.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px;">Nenhum empresário encontrado.<br>Peça para eles completarem o perfil!</div>';
+      return;
+    }
+    const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+    resultsEl.innerHTML = users.map(u => {
+      const nome = u.nome || 'Empresário';
+      const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      const color = colors[nome.charCodeAt(0) % colors.length];
+      const av = u.avatar_url ? `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : initials;
+      return `<div class="user-result" onclick="selectUserToMessage('${u.id}','${(u.nome||'').replace(/'/g,'').replace(/"/g,'')}','${(u.empresa||'').replace(/'/g,'').replace(/"/g,'')}')">
+        <div class="user-result-av" style="background:${color};">${av}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:500;color:var(--color, var(--text));">${nome}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:1px;">${u.empresa || u.setor || ''} ${u.cidade ? '· '+u.cidade : ''}</div>
         </div>
-      </div>
-    `;
-  }, 400);
+        <div style="font-size:11px;color:var(--accent);font-weight:500;">Mensagem →</div>
+      </div>`;
+    }).join('');
+  }, 300);
 }
 
-async function startConvWithEmail(email) {
-  // Find user by email via a posts lookup (users who posted)
-  const { data: posts } = await sb.from('posts').select('user_id, author_meta').limit(100);
+function selectUserToMessage(userId, nome, empresa) {
   const modal = document.getElementById('new-conv-modal');
-  
-  // For now, use the email as display and try to find matching post author
-  const match = (posts || []).find(p => p.author_meta?.email === email);
-  const userId = match?.user_id;
-  
-  if (!userId || userId === currentUser.id) {
-    toast('Usuário não encontrado. Peça para ele publicar um post primeiro!', 'error');
-    return;
-  }
-  
   if (modal) modal.remove();
-  goPage('msgs');
-  openChat(userId);
+  startDirectMessage(userId, nome || 'Empresário', empresa || '');
 }
 
 async function startDirectMessage(userId, nome, empresa) {
@@ -1265,7 +1273,19 @@ async function init() {
       showApp();
       loadPosts();
       loadRecentMembers();
-      toast('Bem-vindo à Nexo! 🎉', 'success');
+      // Sync profile on login
+  const meta = session.user.user_metadata || {};
+  await sb.from('profiles').upsert({
+    id: session.user.id,
+    nome: meta.full_name || meta.name || session.user.email.split('@')[0],
+    empresa: meta.empresa || '',
+    setor: meta.setor || '',
+    cidade: meta.cidade || '',
+    bio: meta.bio || '',
+    email: session.user.email,
+    avatar_url: meta.avatar_url || ''
+  });
+  toast('Bem-vindo à Nexo! 🎉', 'success');
     }
     if (event === 'SIGNED_OUT') {
       showPage('login');
