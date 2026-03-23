@@ -2761,7 +2761,8 @@ let notifOpen = false;
 async function createNotification(userId, type, message, linkUserId=null, linkPostId=null) {
   if (!userId || userId === currentUser?.id) return;
   try {
-    const { error } = await sb.from('notifications').insert({
+    // Save to DB
+    await sb.from('notifications').insert({
       user_id: userId,
       type,
       message,
@@ -2769,7 +2770,12 @@ async function createNotification(userId, type, message, linkUserId=null, linkPo
       link_post_id: linkPostId,
       read: false
     });
-    if (error) console.log('Notif insert error:', error.message);
+    // Broadcast to user in real time
+    await sb.channel('user-notifs-' + userId).send({
+      type: 'broadcast',
+      event: 'notif',
+      payload: { type, message }
+    });
   } catch(e) { console.log('Notif error:', e); }
 }
 
@@ -2867,22 +2873,52 @@ async function markAllRead() {
   document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
 }
 
+function playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+function handleIncomingNotif(type, message) {
+  loadUnreadCount();
+  const icons = { like: '❤️', comment: '💬', follow: '👤', message: '✉️' };
+  const icon = icons[type] || '🔔';
+  toast(icon + ' ' + message, 'success');
+  playNotifSound();
+  if (notifOpen) {
+    const list = document.getElementById('notif-list');
+    if (list) {
+      const item = document.createElement('div');
+      item.className = 'notif-item unread';
+      item.innerHTML = '<div class="notif-icon">' + icon + '</div><div class="notif-content"><div class="notif-text">' + message + '</div><div class="notif-time">agora</div></div>';
+      list.insertBefore(item, list.firstChild);
+    }
+  }
+}
+
 function startRealtimeNotifications() {
-  sb.channel('notifs-' + currentUser.id + '-' + Date.now())
+  const myId = currentUser.id;
+  sb.channel('notifs-pg-' + myId + '-' + Date.now())
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
       table: 'notifications'
     }, payload => {
-      // Only handle notifications for current user
-      if (payload.new.user_id !== currentUser?.id) return;
-      // Update badge
+      if (payload.new.user_id !== myId) return;
       loadUnreadCount();
-      // Show toast
       const icons = { like: '❤️', comment: '💬', follow: '👤', message: '✉️' };
       const icon = icons[payload.new.type] || '🔔';
       toast(icon + ' ' + payload.new.message, 'success');
-      // Play notification sound
+      // Sound
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
@@ -2892,10 +2928,9 @@ function startRealtimeNotifications() {
         osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
         gain.gain.setValueAtTime(0.3, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.3);
+        osc.start(); osc.stop(ctx.currentTime + 0.3);
       } catch(e) {}
-      // Update notif sheet if open
+      // Update open sheet
       if (notifOpen) {
         const list = document.getElementById('notif-list');
         if (list) {
@@ -2906,9 +2941,7 @@ function startRealtimeNotifications() {
         }
       }
     })
-    .subscribe((status) => {
-      console.log('Notif realtime status:', status);
-    });
+    .subscribe(status => console.log('Notif realtime:', status));
 }
 
 // ===== PUBLISH MODAL =====
