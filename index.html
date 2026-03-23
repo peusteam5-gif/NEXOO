@@ -297,6 +297,16 @@ select.form-input { cursor: pointer; }
 .send-btn { width: 38px; height: 38px; border-radius: 8px; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
 .send-btn:hover { background: #d6f57a; }
 .new-msg-badge { background: var(--accent); color: #0d0f14; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 6px; margin-left: auto; }
+
+/* NOVA CONVERSA MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 5000; display: flex; align-items: center; justify-content: center; animation: fadeUp 0.2s ease; }
+.modal-box { background: var(--surface); border: 1px solid var(--border2); border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; margin: 20px; }
+.modal-title { font-family: var(--font-head); font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.user-result { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.12s; border: 1px solid var(--border); margin-bottom: 8px; }
+.user-result:hover { background: var(--surface2); border-color: var(--border2); }
+.user-result-av { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 13px; font-weight: 700; color: #0d0f14; flex-shrink: 0; }
+.modal-close { float: right; background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; line-height: 1; margin-top: -4px; }
 </style>
 </head>
 <body>
@@ -610,7 +620,10 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="msgs-wrap">
       <div class="msgs-list">
         <div class="msgs-list-header">
-          <div class="msgs-list-title">Mensagens</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div class="msgs-list-title" style="margin-bottom:0;">Mensagens</div>
+            <button onclick="openNewConvModal()" style="padding:5px 12px;border-radius:7px;background:var(--accent-dim);border:1px solid rgba(200,240,96,0.25);color:var(--accent);font-size:11px;font-weight:600;font-family:var(--font-body);cursor:pointer;">+ Nova</button>
+          </div>
           <div class="msgs-search">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="5.5" r="4"/><path d="M9 9l2.5 2.5"/></svg>
             <input placeholder="Buscar conversa…" id="msgs-search-input">
@@ -904,7 +917,7 @@ function renderPost(p) {
     <div class="post-body">${p.content}</div>
     <div class="post-footer">
       <button class="post-btn" onclick="toggleLike(this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 9l3-6 2 3 2-2 3 5H1z"/></svg>${p.likes||0}</button>
-      ${isMe ? `<button class="post-btn" style="margin-left:auto;color:var(--red);" onclick="deletePost('${p.id}',this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h10M5 4V2h4v2M6 7v4M8 7v4M3 4l1 8h6l1-8"/></svg>Excluir</button>` : ''}
+      ${isMe ? `<button class="post-btn" style="margin-left:auto;color:var(--red);" onclick="deletePost('${p.id}',this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h10M5 4V2h4v2M6 7v4M8 7v4M3 4l1 8h6l1-8"/></svg>Excluir</button>` : `<button class="post-btn" style="margin-left:auto;" onclick="startDirectMessage('${p.user_id}','${(p.author_meta?.nome||'Empresário').replace(/'/g,'')}','${(p.author_meta?.empresa||'').replace(/'/g,'')}')" ><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>Mensagem</button>`}
     </div>
   </div>`;
 }
@@ -989,6 +1002,103 @@ function timeAgo(dateStr) {
   if (diff < 3600) return Math.floor(diff/60) + 'min';
   if (diff < 86400) return Math.floor(diff/3600) + 'h';
   return Math.floor(diff/86400) + 'd';
+}
+
+// ===== NOVA CONVERSA MODAL =====
+async function openNewConvModal() {
+  const existing = document.getElementById('new-conv-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'new-conv-modal';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('new-conv-modal').remove();">×</button>
+      <div class="modal-title">Nova conversa</div>
+      <div class="modal-sub">Busque pelo e-mail do empresário</div>
+      <div class="form-group">
+        <input class="form-input" id="search-user-input" placeholder="email@empresa.com.br" oninput="searchUsers(this.value)">
+      </div>
+      <div id="user-results"><div style="font-size:12px;color:var(--muted);text-align:center;padding:12px;">Digite um e-mail para buscar</div></div>
+    </div>
+  `;
+  modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('search-user-input').focus(), 100);
+}
+
+let searchTimeout = null;
+async function searchUsers(query) {
+  clearTimeout(searchTimeout);
+  const resultsEl = document.getElementById('user-results');
+  if (!query || query.length < 3) {
+    resultsEl.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px;">Digite pelo menos 3 caracteres</div>';
+    return;
+  }
+  resultsEl.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px;">Buscando...</div>';
+  searchTimeout = setTimeout(async () => {
+    const { data: { users }, error } = await sb.auth.admin?.listUsers?.() || { data: { users: [] } };
+    // Use profiles approach - search by email in auth
+    const { data, error: err } = await sb.rpc('search_users_by_email', { search_email: query }).catch(() => ({ data: null }));
+    
+    // Fallback: just show a direct start option
+    resultsEl.innerHTML = `
+      <div class="user-result" onclick="startConvWithEmail('${query}')">
+        <div class="user-result-av" style="background:linear-gradient(135deg,#4af0b0,#c8f060);">+</div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text);">${query}</div>
+          <div style="font-size:11px;color:var(--muted);">Iniciar conversa com este e-mail</div>
+        </div>
+      </div>
+    `;
+  }, 400);
+}
+
+async function startConvWithEmail(email) {
+  // Find user by email via a posts lookup (users who posted)
+  const { data: posts } = await sb.from('posts').select('user_id, author_meta').limit(100);
+  const modal = document.getElementById('new-conv-modal');
+  
+  // For now, use the email as display and try to find matching post author
+  const match = (posts || []).find(p => p.author_meta?.email === email);
+  const userId = match?.user_id;
+  
+  if (!userId || userId === currentUser.id) {
+    toast('Usuário não encontrado. Peça para ele publicar um post primeiro!', 'error');
+    return;
+  }
+  
+  if (modal) modal.remove();
+  goPage('msgs');
+  openChat(userId);
+}
+
+async function startDirectMessage(userId, nome, empresa) {
+  goPage('msgs');
+  currentChatUserId = userId;
+  document.getElementById('chat-empty').style.display = 'none';
+  const chatOpen = document.getElementById('chat-open');
+  if (chatOpen) { chatOpen.style.display = 'flex'; chatOpen.style.flexDirection = 'column'; }
+  const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+  const color = colors[nome.charCodeAt(0) % colors.length];
+  const avEl = document.getElementById('chat-av');
+  if (avEl) { avEl.style.background = color; avEl.textContent = initials; }
+  const nameEl = document.getElementById('chat-name');
+  if (nameEl) nameEl.textContent = nome;
+  const roleEl = document.getElementById('chat-role');
+  if (roleEl) roleEl.textContent = empresa || 'Membro da Nexo';
+  await loadMessages(userId);
+  if (msgSubscription) msgSubscription.unsubscribe();
+  msgSubscription = sb.channel('msgs-' + userId)
+    .on('postgres_changes', {event: 'INSERT', schema: 'public', table: 'messages'}, payload => {
+      const m = payload.new;
+      if ((m.from_id === currentUser.id && m.to_id === userId) || (m.from_id === userId && m.to_id === currentUser.id)) {
+        appendMessage(m);
+      }
+    }).subscribe();
+  loadConversations();
 }
 
 // ===== MESSAGES =====
