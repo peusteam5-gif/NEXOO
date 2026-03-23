@@ -972,8 +972,8 @@ select.form-input { cursor: pointer; }
       <div class="right-col">
         <div class="stats-bar" id="my-stats">
           <div class="stat-item"><div class="stat-val green" id="stat-posts">0</div><div class="stat-label">posts</div></div>
-          <div class="stat-item"><div class="stat-val">0</div><div class="stat-label">conexões</div></div>
-          <div class="stat-item"><div class="stat-val">0</div><div class="stat-label">visualiz.</div></div>
+          <div class="stat-item"><div class="stat-val" id="stat-seguidores">0</div><div class="stat-label">seguidores</div></div>
+          <div class="stat-item"><div class="stat-val" id="stat-seguindo">0</div><div class="stat-label">seguindo</div></div>
         </div>
         <div class="panel-card">
           <div class="panel-header"><div class="panel-title">Em alta hoje</div></div>
@@ -1056,8 +1056,8 @@ select.form-input { cursor: pointer; }
               <div class="mp-email" id="perfil-email">...</div>
               <div class="mp-stats">
                 <div class="mp-stat"><div class="mp-stat-val" id="perfil-posts">0</div><div class="mp-stat-label">posts</div></div>
-                <div class="mp-stat"><div class="mp-stat-val">0</div><div class="mp-stat-label">conexões</div></div>
-                <div class="mp-stat"><div class="mp-stat-val" id="perfil-membro">...</div><div class="mp-stat-label">membro desde</div></div>
+                <div class="mp-stat"><div class="mp-stat-val" id="perfil-seguidores">0</div><div class="mp-stat-label">seguidores</div></div>
+                <div class="mp-stat"><div class="mp-stat-val" id="perfil-seguindo">0</div><div class="mp-stat-label">seguindo</div></div>
               </div>
             </div>
           </div>
@@ -1426,12 +1426,25 @@ async function loadProfile(user) {
   document.getElementById('edit-bio').value = bio;
   if (setor) document.getElementById('edit-setor').value = setor;
 
-  // Load posts count
+  // Load posts + follower counts in parallel
   checkAdmin();
-  const { count } = await sb.from('posts').select('*', {count:'exact',head:true}).eq('user_id', user.id);
-  const postCount = count || 0;
-  document.getElementById('stat-posts').textContent = postCount;
-  document.getElementById('perfil-posts').textContent = postCount;
+  const [postsRes, followersRes, followingRes] = await Promise.all([
+    sb.from('posts').select('*', {count:'exact',head:true}).eq('user_id', user.id),
+    sb.from('follows').select('*', {count:'exact',head:true}).eq('following_id', user.id),
+    sb.from('follows').select('*', {count:'exact',head:true}).eq('follower_id', user.id)
+  ]);
+  const postCount = postsRes.count || 0;
+  const followersCount = followersRes.count || 0;
+  const followingCount = followingRes.count || 0;
+
+  // Feed stats
+  const sp = document.getElementById('stat-posts'); if (sp) sp.textContent = postCount;
+  const ss = document.getElementById('stat-seguidores'); if (ss) ss.textContent = followersCount;
+  const sf = document.getElementById('stat-seguindo'); if (sf) sf.textContent = followingCount;
+  // Profile stats
+  const pp = document.getElementById('perfil-posts'); if (pp) pp.textContent = postCount;
+  const ps = document.getElementById('perfil-seguidores'); if (ps) ps.textContent = followersCount;
+  const pf = document.getElementById('perfil-seguindo'); if (pf) pf.textContent = followingCount;
 }
 
 async function saveProfile() {
@@ -1641,7 +1654,7 @@ async function submitPost() {
     likes: 0
   });
   if (error) { toast('Erro ao publicar: ' + error.message, 'error'); return; }
-  if (contentEl) contentEl.textContent = '';
+  if (contentEl) { contentEl.innerHTML = ''; contentEl.blur(); }
   toast('Post publicado! 🎉', 'success');
   loadPosts();
   const { count } = await sb.from('posts').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);
@@ -1685,15 +1698,33 @@ async function toggleLike(btn, postId) {
 }
 
 async function loadRecentMembers() {
-  const { data: users, error } = await sb.from('profiles_public').select('*').order('created_at', { ascending: false }).limit(3);
   const container = document.getElementById('recent-members');
+  if (!container) return;
+  const { data: users, error } = await sb.from('profiles')
+    .select('id, nome, empresa, setor, avatar_url')
+    .neq('id', currentUser?.id || '')
+    .order('created_at', { ascending: false })
+    .limit(4);
   if (error || !users || users.length === 0) {
-    container.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:var(--muted);">Seja o primeiro membro!</div>`;
+    container.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:var(--muted);">Nenhum membro ainda!</div>`;
     return;
   }
+  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
   container.innerHTML = users.map(u => {
-    const initials = (u.nome||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
-    return `<div class="suggested-item"><div class="user-av" style="width:28px;height:28px;font-size:11px;">${initials}</div><div class="sug-info"><div class="sug-name">${u.nome||'Empresário'}</div><div class="sug-role">${u.empresa||u.setor||''}</div></div></div>`;
+    const nome = u.nome || 'Empresário';
+    const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const color = colors[nome.charCodeAt(0) % colors.length];
+    const av = u.avatar_url
+      ? `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      : initials;
+    return `<div class="suggested-item" onclick="openPublicProfile('${u.id}')">
+      <div class="user-av" style="width:28px;height:28px;font-size:11px;background:${color};overflow:hidden;">${av}</div>
+      <div class="sug-info">
+        <div class="sug-name">${nome}</div>
+        <div class="sug-role">${u.empresa||u.setor||'Membro da Nexo'}</div>
+      </div>
+      <button class="connect-btn" onclick="event.stopPropagation();openPublicProfile('${u.id}')">Ver →</button>
+    </div>`;
   }).join('');
 }
 
@@ -2471,6 +2502,8 @@ async function loadReels() {
   reelsData = videos;
   container.style.display = 'block';
   container.innerHTML = videos.map((v, i) => renderReel(v, i)).join('');
+  // Mute all videos for autoplay policy compliance
+  document.querySelectorAll('.reel-video').forEach(v => { v.muted = true; });
 
   // Setup intersection observer for autoplay
   setupReelObserver();
@@ -2490,7 +2523,7 @@ function renderReel(v, index) {
   const ago = timeAgo(v.created_at);
 
   return `<div class="reel-item" data-reel-index="${index}" data-post-id="${v.id}">
-    <video class="reel-video" src="${v.media_url}" loop playsinline preload="metadata" id="reel-video-${v.id}"></video>
+    <video class="reel-video" src="${v.media_url}" loop playsinline preload="metadata" muted id="reel-video-${v.id}"></video>
     <div class="reel-overlay"></div>
     <div class="reel-play-overlay" id="reel-play-${v.id}">
       <div class="reel-play-icon">
@@ -2559,24 +2592,38 @@ function setupReelObserver() {
 }
 
 async function toggleReelLike(postId, btn) {
-  await toggleLike(btn.querySelector('.reel-action-icon'), postId);
-  // Sync count
-  const countEl = document.getElementById('reel-likes-' + postId);
-  const postCountEl = btn.querySelector('.reel-action-count');
-  const { count } = await sb.from('likes').select('*', {count:'exact',head:true}).eq('post_id', postId);
-  if (countEl) countEl.textContent = count || 0;
-  if (postCountEl) postCountEl.textContent = count || 0;
-  // Update icon
+  if (!currentUser) { toast('Faça login para curtir', 'error'); return; }
+  if (btn.dataset.loading) return;
+  btn.dataset.loading = '1';
+
   const icon = btn.querySelector('.reel-action-icon');
-  const isNowLiked = myLikes.has(postId);
+  const countEl = document.getElementById('reel-likes-' + postId);
+  const isLiked = myLikes.has(postId);
+
+  if (isLiked) {
+    await sb.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
+    myLikes.delete(postId);
+  } else {
+    await sb.from('likes').insert({ user_id: currentUser.id, post_id: postId });
+    myLikes.add(postId);
+  }
+
+  // Recalculate from DB
+  const { count } = await sb.from('likes').select('*', {count:'exact',head:true}).eq('post_id', postId);
+  await sb.from('posts').update({ likes: count || 0 }).eq('id', postId);
+  if (countEl) countEl.textContent = count || 0;
+
+  // Update icon visually
+  const nowLiked = myLikes.has(postId);
   if (icon) {
-    icon.classList.toggle('liked', isNowLiked);
+    icon.classList.toggle('liked', nowLiked);
     const svgPath = icon.querySelector('path');
     if (svgPath) {
-      svgPath.setAttribute('fill', isNowLiked ? 'rgba(200,240,96,0.8)' : 'none');
-      svgPath.setAttribute('stroke', isNowLiked ? 'var(--accent)' : 'white');
+      svgPath.setAttribute('fill', nowLiked ? 'rgba(200,240,96,0.8)' : 'none');
+      svgPath.setAttribute('stroke', nowLiked ? 'var(--accent)' : 'white');
     }
   }
+  delete btn.dataset.loading;
 }
 
 function toggleReelComments(postId) {
@@ -2903,20 +2950,32 @@ async function loadConversations() {
     return;
   }
 
+  // Fetch real names from profiles
+  const { data: profilesData } = await sb.from('profiles').select('id, nome, empresa, avatar_url').in('id', userIds);
+  const profileMap = {};
+  (profilesData || []).forEach(p => { profileMap[p.id] = p; });
+
+  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+
   convList.innerHTML = userIds.map(uid => {
     const u = userMap[uid];
-    const initials = uid.slice(0,2).toUpperCase();
-    const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
-    const color = colors[uid.charCodeAt(0) % colors.length];
+    const profile = profileMap[uid] || {};
+    const nome = profile.nome || 'Empresário';
+    const empresa = profile.empresa || 'Membro da Nexo';
+    const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const color = colors[nome.charCodeAt(0) % colors.length];
+    const av = profile.avatar_url
+      ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      : initials;
     const ago = timeAgo(u.time);
     return `<div class="conv-item" id="conv-${uid}" onclick="openChat('${uid}')">
-      <div class="conv-av" style="background:${color}">${initials}</div>
+      <div class="conv-av" style="background:${color}">${av}</div>
       <div class="conv-info">
         <div class="conv-name-row">
-          <div class="conv-name">${initials} (empresário)</div>
+          <div class="conv-name">${nome}</div>
           <div class="conv-time">${ago}</div>
         </div>
-        <div class="conv-preview">${u.last || ''}</div>
+        <div class="conv-preview">${u.last || empresa}</div>
       </div>
       ${u.unread ? '<div class="conv-unread"></div>' : ''}
     </div>`;
@@ -2946,13 +3005,27 @@ async function openChat(userId) {
   chatOpen.style.display = 'flex';
   chatOpen.style.flexDirection = 'column';
 
-  const initials = userId.slice(0,2).toUpperCase();
+  // Fetch real profile name
+  const { data: chatProfile } = await sb.from('profiles').select('nome, empresa, avatar_url').eq('id', userId).maybeSingle();
+  const chatNome = chatProfile?.nome || 'Empresário';
+  const chatEmpresa = chatProfile?.empresa || 'Membro da Nexo';
+  const chatInitials = chatNome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
   const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
-  const color = colors[userId.charCodeAt(0) % colors.length];
-  document.getElementById('chat-av').style.background = color;
-  document.getElementById('chat-av').textContent = initials;
-  document.getElementById('chat-name').textContent = 'Empresário ' + initials;
-  document.getElementById('chat-role').textContent = 'Membro da Nexo';
+  const chatColor = colors[chatNome.charCodeAt(0) % colors.length];
+  const chatAv = document.getElementById('chat-av');
+  if (chatAv) {
+    if (chatProfile?.avatar_url) {
+      chatAv.innerHTML = `<img src="${chatProfile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      chatAv.style.background = 'none';
+    } else {
+      chatAv.textContent = chatInitials;
+      chatAv.style.background = chatColor;
+    }
+  }
+  const nameEl = document.getElementById('chat-name');
+  if (nameEl) nameEl.textContent = chatNome;
+  const roleEl = document.getElementById('chat-role');
+  if (roleEl) roleEl.textContent = chatEmpresa;
 
   await loadMessages(userId);
   await sb.from('messages').update({read: true}).eq('from_id', userId).eq('to_id', currentUser.id);
@@ -3188,4 +3261,3 @@ init();
 
 </body>
 </html>
-
