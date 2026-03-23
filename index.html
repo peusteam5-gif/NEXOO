@@ -315,6 +315,9 @@ select.form-input { cursor: pointer; }
 .bn-item:hover { color:var(--text); }
 .bn-item.active { color:var(--accent); }
 .bn-item svg { width:20px; height:20px; flex-shrink:0; }
+.bn-plus { background: var(--accent); border-radius: 12px; width: 44px; height: 32px; display: flex; align-items: center; justify-content: center; margin-bottom: 2px; }
+.bn-plus svg { width: 20px; height: 20px; stroke: #0d0f14; }
+.bn-item.plus-item { color: var(--text); }
 .bn-badge {
   position:absolute; top:4px; right:18px;
   background:var(--accent); color:#0d0f14;
@@ -331,10 +334,17 @@ select.form-input { cursor: pointer; }
   .mobile-topbar { display:flex !important; }
   #desktop-topbar { display:none !important; }
   .sidebar { display:none !important; }
-  .feed-col { padding: 0 0 16px !important; }
-  .stories-bar { padding: 12px 12px 8px !important; border-bottom: 1px solid var(--border); margin-bottom: 0 !important; }
-  .post-box { margin: 12px 12px 0 !important; border-radius: 10px; }
-  .post-card { margin: 12px 12px 0 !important; border-radius: 10px; }
+  .right-col { display:none !important; }
+  .feed-col { padding: 0 0 16px !important; max-width: 100% !important; }
+  .stories-bar { padding: 10px 8px 8px !important; border-bottom: 1px solid var(--border); margin-bottom: 0 !important; }
+  .post-box { display: none !important; }
+  .post-card { margin: 0 0 1px !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
+  .post-card:first-child { border-top: none !important; }
+  .pub-perfil-wrap { padding: 0 0 16px !important; flex-direction: column; }
+  .meu-perfil-content { padding: 0 0 16px !important; flex-direction: column; }
+  .meu-perfil-col { max-width: 100% !important; }
+  .grupos-content, .opor-content, .rede-content, .admin-content, .busca-wrap { padding: 0 !important; }
+  .busca-input-wrap { border-radius: 0; }
 }
 
 /* BACK BUTTON for chat on mobile */
@@ -599,6 +609,19 @@ select.form-input { cursor: pointer; }
 .post-tab { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--muted); background: none; border: 1px solid transparent; font-family: var(--font-body); transition: all 0.15s; }
 .post-tab:hover { color: var(--text); background: var(--surface2); }
 .post-tab.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(200,240,96,0.2); }
+
+/* PUBLISH MODAL */
+.publish-sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-radius: 20px 20px 0 0; border-top: 1px solid var(--border2); z-index: 5000; padding: 12px 0 40px; animation: slideUp 0.25s ease both; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.publish-sheet-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+.publish-sheet-title { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 20px; }
+.publish-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px; }
+.publish-option { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 20px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; transition: all 0.15s; }
+.publish-option:hover { border-color: var(--border2); background: var(--surface); }
+.publish-option-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.publish-option-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.publish-option-sub { font-size: 11px; color: var(--muted); text-align: center; }
+.publish-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 4999; }
 </style>
 </head>
 <body>
@@ -790,8 +813,8 @@ select.form-input { cursor: pointer; }
         <button class="mobile-icon-btn" onclick="goPage('busca');setBottomNav('busca')">
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M13 13l3 3"/></svg>
         </button>
-        <button class="mobile-icon-btn" onclick="goPage('msgs');setBottomNav('msgs')">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h16v11H10l-4 4V12H1z"/></svg>
+        <button class="mobile-icon-btn" onclick="goPage('msgs');setBottomNav('msgs')" style="position:relative;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10L17 3l-4 14-3-5-5-2z"/><path d="M10 10l4-4"/></svg>
           <span class="mobile-notif-dot" id="mobile-msgs-dot" style="display:none;"></span>
         </button>
       </div>
@@ -1029,21 +1052,23 @@ select.form-input { cursor: pointer; }
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
       Feed
     </div>
+    <div class="bn-item" id="bn-busca" onclick="goPage('busca');setBottomNav('busca');setTimeout(()=>document.getElementById('busca-input')?.focus(),200)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M11 11l3 3"/></svg>
+      Buscar
+    </div>
+    <div class="bn-item plus-item" onclick="openPublishModal()">
+      <div class="bn-plus">
+        <svg viewBox="0 0 16 16" fill="none" stroke-width="2.5"><path d="M8 3v10M3 8h10" stroke="#0d0f14"/></svg>
+      </div>
+      Publicar
+    </div>
     <div class="bn-item" id="bn-msgs" onclick="goPage('msgs');setBottomNav('msgs')">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h14v10H9l-3 3V11H1z"/></svg>
       <span class="bn-badge" id="bn-msgs-badge" style="display:none">0</span>
       Msgs
     </div>
-    <div class="bn-item" id="bn-busca" onclick="goPage('busca');setBottomNav('busca');setTimeout(()=>document.getElementById('busca-input')?.focus(),200)">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M11 11l3 3"/></svg>
-      Buscar
-    </div>
-    <div class="bn-item" id="bn-opor" onclick="goPage('opor');setBottomNav('opor')">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l2 4h4l-3 3 1 5-4-2.5L4 13l1-5L2 5h4z"/></svg>
-      Opor.
-    </div>
     <div class="bn-item" id="bn-meu-perfil" onclick="goPage('meu-perfil');setBottomNav('meu-perfil')">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-5 6-5s6 1.7 6 5"/></svg>
+      <div id="bn-perfil-av" style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#4af0b0,#c8f060);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#0d0f14;overflow:hidden;">?</div>
       Perfil
     </div>
   </div>
@@ -1339,6 +1364,7 @@ async function loadProfile(user) {
     });
   }
   document.getElementById('sidebar-name').textContent = nome;
+  updateBnAvatar();
   document.getElementById('sidebar-role').textContent = empresa || setor || 'Empresário';
 
   // Feed avatar
@@ -2390,6 +2416,69 @@ document.addEventListener('click', function(e) {
   const wrap = document.getElementById('search-bar-wrap');
   if (wrap && !wrap.contains(e.target)) clearSearch();
 }, true);
+
+// ===== PUBLISH MODAL =====
+function openPublishModal() {
+  const existing = document.getElementById('publish-sheet');
+  if (existing) { existing.remove(); document.getElementById('publish-overlay')?.remove(); return; }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'publish-overlay';
+  overlay.id = 'publish-overlay';
+  overlay.onclick = closePublishModal;
+  document.body.appendChild(overlay);
+
+  const sheet = document.createElement('div');
+  sheet.className = 'publish-sheet';
+  sheet.id = 'publish-sheet';
+  sheet.innerHTML = `
+    <div class="publish-sheet-handle"></div>
+    <div class="publish-sheet-title">Criar novo</div>
+    <div class="publish-options">
+      <div class="publish-option" onclick="closePublishModal();goPage('feed');setBottomNav('feed');setTimeout(()=>{switchPostTab('texto');document.getElementById('post-content')?.focus()},300)">
+        <div class="publish-option-icon" style="background:var(--accent-dim);">✏️</div>
+        <div class="publish-option-name">Post</div>
+        <div class="publish-option-sub">Compartilhe um texto</div>
+      </div>
+      <div class="publish-option" onclick="closePublishModal();goPage('feed');setBottomNav('feed');setTimeout(()=>switchPostTab('foto'),300)">
+        <div class="publish-option-icon" style="background:rgba(74,240,176,0.12);">📷</div>
+        <div class="publish-option-name">Foto</div>
+        <div class="publish-option-sub">Publique uma imagem</div>
+      </div>
+      <div class="publish-option" onclick="closePublishModal();goPage('feed');setBottomNav('feed');setTimeout(()=>switchPostTab('video'),300)">
+        <div class="publish-option-icon" style="background:rgba(240,96,96,0.12);">🎥</div>
+        <div class="publish-option-name">Vídeo</div>
+        <div class="publish-option-sub">Compartilhe um vídeo</div>
+      </div>
+      <div class="publish-option" onclick="closePublishModal();openAddStoryModal()">
+        <div class="publish-option-icon" style="background:rgba(240,192,64,0.12);">⭕</div>
+        <div class="publish-option-name">Story</div>
+        <div class="publish-option-sub">Visível por 24 horas</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(sheet);
+}
+
+function closePublishModal() {
+  document.getElementById('publish-sheet')?.remove();
+  document.getElementById('publish-overlay')?.remove();
+}
+
+// Update bottom nav profile avatar
+function updateBnAvatar() {
+  const bnAv = document.getElementById('bn-perfil-av');
+  if (!bnAv || !currentUser) return;
+  const meta = currentUser.user_metadata || {};
+  if (meta.avatar_url) {
+    bnAv.innerHTML = `<img src="${meta.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    bnAv.style.background = 'none';
+  } else {
+    const nome = meta.full_name || meta.name || currentUser.email.split('@')[0];
+    const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    bnAv.textContent = initials;
+  }
+}
 
 // ===== MOBILE NAV =====
 function setBottomNav(page) {
