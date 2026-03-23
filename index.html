@@ -657,6 +657,28 @@ overflow: hidden; animation: fadeUp 0.2s ease both;
 @media(max-width:900px) {
 .reel-item { height: calc(100vh - 112px); }
 }
+
+/* ===== NOTIFICAÇÕES ===== */
+.notif-count { position:absolute; top:-4px; right:-4px; background:var(--red); color:#fff; font-size:9px; font-weight:700; border-radius:10px; padding:1px 5px; min-width:16px; text-align:center; border:2px solid var(--surface); display:none; }
+.notif-sheet { position:fixed; top:52px; right:12px; width:340px; max-width:calc(100vw - 24px); background:var(--surface); border:1px solid var(--border2); border-radius:16px; z-index:5000; box-shadow:0 8px 32px rgba(0,0,0,0.4); overflow:hidden; animation:fadeUp 0.2s ease both; max-height:70vh; display:flex; flex-direction:column; }
+.notif-sheet-header { padding:14px 16px 10px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.notif-sheet-title { font-family:var(--font-head); font-size:14px; font-weight:700; color:var(--text); }
+.notif-mark-all { font-size:11px; color:var(--accent); cursor:pointer; background:none; border:none; font-family:var(--font-body); }
+.notif-list { overflow-y:auto; flex:1; }
+.notif-item { display:flex; align-items:flex-start; gap:10px; padding:12px 16px; cursor:pointer; transition:background 0.12s; border-bottom:0.5px solid var(--border); }
+.notif-item:hover { background:var(--surface2); }
+.notif-item.unread { background:rgba(200,240,96,0.05); }
+.notif-item.unread::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; margin-top:6px; }
+.notif-av { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-head); font-size:13px; font-weight:700; color:#0d0f14; flex-shrink:0; overflow:hidden; }
+.notif-av img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.notif-icon { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.notif-content { flex:1; min-width:0; }
+.notif-text { font-size:13px; color:var(--text); line-height:1.4; }
+.notif-text strong { font-weight:600; }
+.notif-time { font-size:11px; color:var(--muted); margin-top:2px; }
+.notif-empty { padding:32px; text-align:center; color:var(--muted); font-size:13px; }
+.notif-overlay { position:fixed; inset:0; z-index:4999; }
+@media(max-width:900px) { .notif-sheet { top:52px; right:8px; left:8px; width:auto; } }
 </style>
 </head>
 <body>
@@ -856,6 +878,10 @@ Entrar com Google
 <button class="mobile-icon-btn" onclick="goPage('busca');setBottomNav('busca')">
 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M13 13l3 3"/></svg>
 </button>
+<button class="mobile-icon-btn" onclick="toggleNotifSheet()" style="position:relative;">
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a6 6 0 0 1 6 6v3l1.5 2.5h-15L4 11V8a6 6 0 0 1 6-6z"/><path d="M8 16a2 2 0 0 0 4 0"/></svg>
+<div class="notif-count" id="notif-count-mobile" style="top:-2px;right:-2px;">0</div>
+</button>
 <button class="mobile-icon-btn" onclick="goPage('msgs');setBottomNav('msgs')" style="position:relative;">
 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 10L17 3l-4 14-3-5-5-2z"/><path d="M10 10l4-4"/></svg>
 <span class="mobile-notif-dot" id="mobile-msgs-dot" style="display:none;"></span>
@@ -880,7 +906,10 @@ onkeydown="onSearchKey(event)">
 <div class="notif-btn" id="mobile-search-btn" onclick="toggleMobileSearch()" style="display:none;">
 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M11 11l3 3"/></svg>
 </div>
-<div class="notif-btn"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a5 5 0 0 1 5 5v3l1 2H2l1-2V6a5 5 0 0 1 5-5z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg><div class="notif-dot"></div></div>
+<div class="notif-btn" onclick="toggleNotifSheet()" id="notif-btn" style="position:relative;">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a5 5 0 0 1 5 5v3l1 2H2l1-2V6a5 5 0 0 1 5-5z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg>
+<div class="notif-count" id="notif-count">0</div>
+</div>
 </div>
 
 <div id="page-feed" class="page active">
@@ -1734,6 +1763,15 @@ const realCount = count || 0;
 await sb.from('posts').update({ likes: realCount }).eq('id', postId);
 if (countEl) countEl.textContent = realCount;
 btn.disabled = false;
+if (!isLiked) {
+try {
+const { data: post } = await sb.from('posts').select('user_id').eq('id', postId).maybeSingle();
+if (post && post.user_id !== currentUser.id) {
+const myName = currentProfile?.nome || currentUser.user_metadata?.full_name || 'Alguém';
+await createNotification(post.user_id, 'like', myName + ' curtiu seu post ❤️', currentUser.id, postId);
+}
+} catch(e) {}
+}
 }
 
 async function loadRecentMembers() {
@@ -1791,6 +1829,13 @@ avEl.textContent = currentProfile.initials || '?';
 }
 }
 await loadComments(postId);
+try {
+const { data: post } = await sb.from('posts').select('user_id').eq('id', postId).maybeSingle();
+if (post && post.user_id !== currentUser.id) {
+const myName = meta.full_name || meta.name || currentUser.email.split('@')[0];
+await createNotification(post.user_id, 'comment', myName + ' comentou no seu post 💬', currentUser.id, postId);
+}
+} catch(e) {}
 }
 }
 
@@ -2065,6 +2110,10 @@ btn.textContent = '✓ Seguindo';
 const counterEl = document.getElementById('pub-followers-' + userId);
 if (counterEl) counterEl.textContent = parseInt(counterEl.textContent) + 1;
 toast('Você começou a seguir ' + (document.querySelector('.pub-name')?.textContent || '') + '!', 'success');
+try {
+const myName = currentProfile?.nome || currentUser.user_metadata?.full_name || 'Alguém';
+await createNotification(userId, 'follow', myName + ' começou a te seguir 👤', currentUser.id, null);
+} catch(e) {}
 }
 }
 btn.disabled = false;
@@ -2706,6 +2755,134 @@ if (el) { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeo
 toast('Reel excluído', 'success');
 }
 
+// ===== NOTIFICAÇÕES =====
+let notifOpen = false;
+
+async function createNotification(userId, type, message, linkUserId=null, linkPostId=null) {
+  if (userId === currentUser?.id) return; // Don't notify yourself
+  try {
+    await sb.from('notifications').insert({
+      user_id: userId,
+      type,
+      message,
+      link_user_id: linkUserId,
+      link_post_id: linkPostId,
+      read: false
+    });
+  } catch(e) { console.log('Notif error:', e); }
+}
+
+async function loadNotifications() {
+  if (!currentUser) return;
+  const { data } = await sb.from('notifications')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  return data || [];
+}
+
+async function loadUnreadCount() {
+  if (!currentUser) return;
+  const { count } = await sb.from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', currentUser.id)
+    .eq('read', false);
+  updateNotifBadge(count || 0);
+}
+
+function updateNotifBadge(count) {
+  ['notif-count', 'notif-count-mobile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = count > 9 ? '9+' : count;
+    el.style.display = count > 0 ? 'block' : 'none';
+  });
+}
+
+async function toggleNotifSheet() {
+  const existing = document.getElementById('notif-sheet');
+  if (existing) { existing.remove(); document.getElementById('notif-overlay')?.remove(); notifOpen = false; return; }
+  notifOpen = true;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'notif-overlay';
+  overlay.id = 'notif-overlay';
+  overlay.onclick = () => { document.getElementById('notif-sheet')?.remove(); overlay.remove(); notifOpen = false; };
+  document.body.appendChild(overlay);
+
+  const sheet = document.createElement('div');
+  sheet.className = 'notif-sheet';
+  sheet.id = 'notif-sheet';
+  sheet.innerHTML = `
+    <div class="notif-sheet-header">
+      <div class="notif-sheet-title">Notificações</div>
+      <button class="notif-mark-all" onclick="markAllRead()">Marcar todas como lidas</button>
+    </div>
+    <div class="notif-list" id="notif-list">
+      <div class="notif-empty">Carregando...</div>
+    </div>`;
+  document.body.appendChild(sheet);
+
+  const notifs = await loadNotifications();
+  renderNotifications(notifs);
+  // Mark all as read after viewing
+  setTimeout(() => markAllRead(), 2000);
+}
+
+function renderNotifications(notifs) {
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+  if (!notifs || notifs.length === 0) {
+    list.innerHTML = '<div class="notif-empty">Nenhuma notificação ainda.<br>Interaja com a rede para receber notificações!</div>';
+    return;
+  }
+  const icons = { like: '❤️', comment: '💬', follow: '👤', message: '✉️' };
+  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+  list.innerHTML = notifs.map(n => {
+    const icon = icons[n.type] || '🔔';
+    const ago = timeAgo(n.created_at);
+    const color = n.link_user_id ? colors[n.link_user_id.charCodeAt(0) % colors.length] : colors[0];
+    const onclick = n.link_post_id
+      ? `goPage('feed');document.getElementById('notif-sheet')?.remove();document.getElementById('notif-overlay')?.remove();`
+      : n.link_user_id
+        ? `openPublicProfile('${n.link_user_id}');document.getElementById('notif-sheet')?.remove();document.getElementById('notif-overlay')?.remove();`
+        : '';
+    return `<div class="notif-item ${n.read?'':'unread'}" onclick="${onclick}">
+      <div class="notif-icon" style="background:var(--surface2);">${icon}</div>
+      <div class="notif-content">
+        <div class="notif-text">${n.message}</div>
+        <div class="notif-time">${ago}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function markAllRead() {
+  if (!currentUser) return;
+  await sb.from('notifications').update({ read: true }).eq('user_id', currentUser.id).eq('read', false);
+  updateNotifBadge(0);
+  // Update UI
+  document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+}
+
+function startRealtimeNotifications() {
+  sb.channel('notifs-' + currentUser.id)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'notifications',
+      filter: 'user_id=eq.' + currentUser.id
+    }, payload => {
+      loadUnreadCount();
+      // Show toast for new notification
+      const icons = { like: '❤️', comment: '💬', follow: '👤', message: '✉️' };
+      const icon = icons[payload.new.type] || '🔔';
+      toast(icon + ' ' + payload.new.message, 'success');
+    })
+    .subscribe();
+}
+
 // ===== PUBLISH MODAL =====
 function openPublishModal() {
 const existing = document.getElementById('publish-sheet');
@@ -3136,7 +3313,11 @@ from_id: currentUser.id,
 to_id: currentChatUserId,
 content
 });
-if (error) toast('Erro ao enviar: ' + error.message, 'error');
+if (error) { toast('Erro ao enviar: ' + error.message, 'error'); return; }
+try {
+const myName = currentProfile?.nome || currentUser.user_metadata?.full_name || 'Alguém';
+await createNotification(currentChatUserId, 'message', myName + ' enviou uma mensagem ✉️', currentUser.id, null);
+} catch(e) {}
 }
 
 // ===== AVATAR UPLOAD =====
@@ -3300,6 +3481,7 @@ try { loadPosts(); } catch(e) {}
 try { loadRecentMembers(); } catch(e) {}
 try { startRealtimeFeed(); } catch(e) {}
 try { loadMyFollowing(); } catch(e) {}
+try { startRealtimeNotifications(); loadUnreadCount(); } catch(e) {}
 // Sync profile on login
 const meta = session.user.user_metadata || {};
 await sb.from('profiles').upsert({
