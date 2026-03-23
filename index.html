@@ -993,22 +993,24 @@ let myLikes = new Set();
 async function loadPosts() {
   const container = document.getElementById('posts-container');
 
-  // Load user's likes first
-  if (currentUser) {
-    const { data: likes } = await sb.from('likes').select('post_id').eq('user_id', currentUser.id);
-    myLikes = new Set((likes || []).map(l => l.post_id));
-  }
+  // Load posts and likes in parallel
+  const [postsResult, likesResult] = await Promise.all([
+    sb.from('posts').select('*').order('created_at', { ascending: false }).limit(20),
+    currentUser ? sb.from('likes').select('post_id').eq('user_id', currentUser.id) : Promise.resolve({ data: [] })
+  ]);
 
-  const { data: posts, error } = await sb.from('posts').select('*').order('created_at', { ascending: false }).limit(20);
-  if (error) {
+  // Update myLikes Set with fresh data from DB
+  myLikes = new Set((likesResult.data || []).map(l => l.post_id));
+
+  if (postsResult.error) {
     container.innerHTML = demoPosts();
     return;
   }
-  if (!posts || posts.length === 0) {
+  if (!postsResult.data || postsResult.data.length === 0) {
     container.innerHTML = `<div class="empty-feed"><div class="e-icon">✍️</div><div class="e-title">Nenhum post ainda</div><div class="e-sub">Seja o primeiro a publicar na Nexo!</div></div>`;
     return;
   }
-  container.innerHTML = posts.map(p => renderPost(p)).join('');
+  container.innerHTML = postsResult.data.map(p => renderPost(p)).join('');
 }
 
 function demoPosts() {
