@@ -2759,9 +2759,9 @@ toast('Reel excluído', 'success');
 let notifOpen = false;
 
 async function createNotification(userId, type, message, linkUserId=null, linkPostId=null) {
-  if (userId === currentUser?.id) return; // Don't notify yourself
+  if (!userId || userId === currentUser?.id) return;
   try {
-    await sb.from('notifications').insert({
+    const { error } = await sb.from('notifications').insert({
       user_id: userId,
       type,
       message,
@@ -2769,6 +2769,7 @@ async function createNotification(userId, type, message, linkUserId=null, linkPo
       link_post_id: linkPostId,
       read: false
     });
+    if (error) console.log('Notif insert error:', error.message);
   } catch(e) { console.log('Notif error:', e); }
 }
 
@@ -2867,20 +2868,32 @@ async function markAllRead() {
 }
 
 function startRealtimeNotifications() {
-  sb.channel('notifs-' + currentUser.id)
+  sb.channel('notifs-' + currentUser.id + '-' + Date.now())
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
-      table: 'notifications',
-      filter: 'user_id=eq.' + currentUser.id
+      table: 'notifications'
     }, payload => {
+      // Only handle notifications for current user
+      if (payload.new.user_id !== currentUser.id) return;
       loadUnreadCount();
-      // Show toast for new notification
       const icons = { like: '❤️', comment: '💬', follow: '👤', message: '✉️' };
       const icon = icons[payload.new.type] || '🔔';
       toast(icon + ' ' + payload.new.message, 'success');
+      // Update notif sheet if open
+      if (notifOpen) {
+        const list = document.getElementById('notif-list');
+        if (list) {
+          const item = document.createElement('div');
+          item.className = 'notif-item unread';
+          item.innerHTML = `<div class="notif-icon">${icon}</div><div class="notif-content"><div class="notif-text">${payload.new.message}</div><div class="notif-time">agora</div></div>`;
+          list.insertBefore(item, list.firstChild);
+        }
+      }
     })
-    .subscribe();
+    .subscribe((status) => {
+      console.log('Notif realtime status:', status);
+    });
 }
 
 // ===== PUBLISH MODAL =====
