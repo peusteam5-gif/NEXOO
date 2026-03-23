@@ -448,6 +448,44 @@ select.form-input { cursor: pointer; }
 .comment-send { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
 .comment-send:hover { background: #d6f57a; }
 .comments-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
+
+/* ===== PERFIL PÚBLICO ===== */
+#page-pub-perfil { flex-direction: column; }
+.pub-perfil-wrap { flex: 1; overflow-y: auto; display: flex; justify-content: center; padding: 28px 24px; gap: 24px; }
+.pub-perfil-col { width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 14px; }
+.pub-cover-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; animation: fadeUp 0.3s ease both; }
+.pub-cover { height: 120px; background: linear-gradient(135deg,#1a2a1a,#0f1f2a,#1a1030); position: relative; overflow: hidden; }
+.pub-cover-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px); background-size: 32px 32px; }
+.pub-av-wrap { position: absolute; bottom: -24px; left: 24px; }
+.pub-av { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 22px; font-weight: 700; color: #0d0f14; border: 3px solid var(--surface); background: linear-gradient(135deg,#f0c040,#ff8c40); overflow: hidden; }
+.pub-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.pub-info { padding: 36px 24px 20px; }
+.pub-name-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.pub-name { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--text); }
+.pub-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.follow-btn { padding: 8px 20px; border-radius: 8px; background: var(--accent); color: #0d0f14; font-size: 13px; font-weight: 700; font-family: var(--font-head); border: none; cursor: pointer; transition: all 0.15s; }
+.follow-btn:hover { background: #d6f57a; }
+.follow-btn.following { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+.follow-btn.following:hover { border-color: var(--red); color: var(--red); }
+.msg-btn-pub { padding: 8px 14px; border-radius: 8px; background: none; color: var(--muted); font-size: 13px; font-family: var(--font-body); border: 1px solid var(--border2); cursor: pointer; transition: all 0.15s; }
+.msg-btn-pub:hover { color: var(--text); background: var(--surface2); }
+.pub-headline { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.pub-loc { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.pub-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.pub-stats { display: flex; gap: 0; border-top: 1px solid var(--border); padding-top: 14px; }
+.pub-stat { flex: 1; text-align: center; cursor: pointer; padding: 4px 0; border-radius: 8px; transition: background 0.15s; }
+.pub-stat:hover { background: var(--surface2); }
+.pub-stat + .pub-stat { border-left: 1px solid var(--border); }
+.pub-stat-val { font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--accent); }
+.pub-stat-label { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.pub-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; animation: fadeUp 0.3s ease both; }
+.pub-section-title { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
+.pub-bio { font-size: 14px; color: #c8c5be; line-height: 1.7; }
+.pub-post { padding: 12px 0; border-top: 1px solid var(--border); cursor: pointer; }
+.pub-post:first-of-type { border-top: none; padding-top: 0; }
+.pub-post-text { font-size: 13px; color: #c8c5be; line-height: 1.55; margin-bottom: 6px; }
+.pub-post-meta { display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--muted); }
+@media(max-width:900px) { .pub-perfil-wrap { padding: 16px 12px; } }
 </style>
 </head>
 <body>
@@ -633,6 +671,10 @@ select.form-input { cursor: pointer; }
 
   <main class="main">
     <div class="topbar">
+      <button id="topbar-back" onclick="history.back()||goPage('feed')" style="display:none;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0;font-family:var(--font-body);">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+        Voltar
+      </button>
       <div class="topbar-title" id="topbar-title">Feed de Negócios</div>
       <div class="search-bar">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4.5"/><path d="M10 10l2.5 2.5"/></svg>
@@ -778,6 +820,15 @@ select.form-input { cursor: pointer; }
     </div>
   </div>
 </nav>
+</div>
+
+<!-- PUBLIC PROFILE PAGE -->
+<div id="page-pub-perfil" class="page" style="display:none;">
+  <div class="pub-perfil-wrap">
+    <div class="pub-perfil-col" id="pub-perfil-col">
+      <div style="text-align:center;padding:40px;color:var(--muted);">Carregando perfil...</div>
+    </div>
+  </div>
 </div>
 
 <!-- ADMIN PAGE -->
@@ -1192,8 +1243,8 @@ function renderPost(p) {
   const color = colors[nome.charCodeAt(0) % colors.length];
   return `<div class="post-card ${isMe?'mine':''}" data-post-id="${p.id}">
     <div class="post-header">
-      <div class="post-av" style="background:${color};">${initials}</div>
-      <div class="post-meta"><div class="post-name">${nome}</div><div class="post-sub">${empresa}</div></div>
+      <div class="post-av" style="background:${color};cursor:pointer;" onclick="openPublicProfile('${p.user_id}')">${initials}</div>
+      <div class="post-meta"><div class="post-name" style="cursor:pointer;" onclick="openPublicProfile('${p.user_id}')">${nome}</div><div class="post-sub">${empresa}</div></div>
       <div class="post-time">${ago}</div>
     </div>
     <div class="post-body">${p.content}</div>
@@ -1467,6 +1518,121 @@ async function loadCommentCounts() {
   ids.forEach(id => updateCommentCount(id, countMap[id] || 0));
 }
 
+// ===== PUBLIC PROFILE =====
+let viewingUserId = null;
+let myFollowing = new Set();
+
+async function openPublicProfile(userId) {
+  if (userId === currentUser?.id) { goPage('meu-perfil'); return; }
+  viewingUserId = userId;
+  goPage('pub-perfil');
+  const col = document.getElementById('pub-perfil-col');
+  col.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">Carregando perfil...</div>';
+
+  // Load profile, posts, follow status in parallel
+  const [profileRes, postsRes, followRes, followersRes, followingRes] = await Promise.all([
+    sb.from('profiles').select('*').eq('id', userId).single(),
+    sb.from('posts').select('*').eq('user_id', userId).order('created_at', {ascending: false}).limit(10),
+    sb.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', userId).single(),
+    sb.from('follows').select('id', {count:'exact',head:true}).eq('following_id', userId),
+    sb.from('follows').select('id', {count:'exact',head:true}).eq('follower_id', userId)
+  ]);
+
+  const p = profileRes.data || {};
+  const posts = postsRes.data || [];
+  const isFollowing = !!followRes.data;
+  const followersCount = followersRes.count || 0;
+  const followingCount = followingRes.count || 0;
+
+  const nome = p.nome || 'Empresário';
+  const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+  const color = colors[nome.charCodeAt(0) % colors.length];
+  const av = p.avatar_url
+    ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+    : initials;
+
+  col.innerHTML = `
+    <div class="pub-cover-card">
+      <div class="pub-cover"><div class="pub-cover-grid"></div>
+        <div class="pub-av-wrap"><div class="pub-av" style="background:${color};">${av}</div></div>
+      </div>
+      <div class="pub-info">
+        <div class="pub-name-row">
+          <div class="pub-name">${nome}</div>
+          <div class="pub-actions">
+            <button class="msg-btn-pub" onclick="startDirectMessage('${userId}','${nome.replace(/'/g,'')}','${(p.empresa||'').replace(/'/g,'')}');goPage('msgs');">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>
+              Mensagem
+            </button>
+            <button class="follow-btn ${isFollowing?'following':''}" id="follow-btn-${userId}" onclick="toggleFollow('${userId}')">
+              ${isFollowing ? '✓ Seguindo' : '+ Seguir'}
+            </button>
+          </div>
+        </div>
+        ${p.empresa ? `<div class="pub-headline">${p.empresa}${p.setor ? ' · ' + p.setor : ''}</div>` : ''}
+        ${p.cidade ? `<div class="pub-loc"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1a3.5 3.5 0 0 1 3.5 3.5C9.5 7.5 6 11 6 11S2.5 7.5 2.5 4.5A3.5 3.5 0 0 1 6 1z"/><circle cx="6" cy="4.5" r="1"/></svg>${p.cidade}</div>` : ''}
+        ${p.setor ? `<div class="pub-tags"><span class="tag accent">${p.setor}</span></div>` : ''}
+        <div class="pub-stats">
+          <div class="pub-stat"><div class="pub-stat-val">${posts.length}</div><div class="pub-stat-label">posts</div></div>
+          <div class="pub-stat"><div class="pub-stat-val" id="pub-followers-${userId}">${followersCount}</div><div class="pub-stat-label">seguidores</div></div>
+          <div class="pub-stat"><div class="pub-stat-val">${followingCount}</div><div class="pub-stat-label">seguindo</div></div>
+        </div>
+      </div>
+    </div>
+    ${p.bio ? `<div class="pub-section"><div class="pub-section-title">Sobre</div><div class="pub-bio">${p.bio}</div></div>` : ''}
+    ${posts.length > 0 ? `
+    <div class="pub-section">
+      <div class="pub-section-title">Publicações (${posts.length})</div>
+      ${posts.map(post => `
+        <div class="pub-post">
+          <div class="pub-post-text">${post.content.length > 120 ? post.content.slice(0,120)+'...' : post.content}</div>
+          <div class="pub-post-meta">
+            <span>${timeAgo(post.created_at)}</span>
+            <span>❤️ ${post.likes||0}</span>
+          </div>
+        </div>`).join('')}
+    </div>` : '<div class="pub-section"><div style="text-align:center;color:var(--muted);font-size:13px;padding:16px 0;">Nenhuma publicação ainda</div></div>'}
+  `;
+
+  if (isFollowing) myFollowing.add(userId);
+}
+
+async function toggleFollow(userId) {
+  const btn = document.getElementById('follow-btn-' + userId);
+  if (!btn || !currentUser) return;
+  btn.disabled = true;
+  const isFollowing = myFollowing.has(userId);
+
+  if (isFollowing) {
+    await sb.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', userId);
+    myFollowing.delete(userId);
+    btn.classList.remove('following');
+    btn.textContent = '+ Seguir';
+    // Update counter
+    const counterEl = document.getElementById('pub-followers-' + userId);
+    if (counterEl) counterEl.textContent = Math.max(0, parseInt(counterEl.textContent) - 1);
+  } else {
+    const { error } = await sb.from('follows').insert({ follower_id: currentUser.id, following_id: userId });
+    if (!error) {
+      myFollowing.add(userId);
+      btn.classList.add('following');
+      btn.textContent = '✓ Seguindo';
+      const counterEl = document.getElementById('pub-followers-' + userId);
+      if (counterEl) counterEl.textContent = parseInt(counterEl.textContent) + 1;
+      toast('Você começou a seguir ' + (document.querySelector('.pub-name')?.textContent || '') + '!', 'success');
+    }
+  }
+  btn.disabled = false;
+}
+
+// Load initial following list
+async function loadMyFollowing() {
+  if (!currentUser) return;
+  const { data } = await sb.from('follows').select('following_id').eq('follower_id', currentUser.id);
+  myFollowing = new Set((data || []).map(f => f.following_id));
+}
+
 // ===== MOBILE NAV =====
 function setBottomNav(page) {
   document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
@@ -1538,7 +1704,7 @@ function startRealtimeFeed() {
 }
 
 // ===== NAVIGATION =====
-const pageTitles = { feed:'Feed de Negócios', grupos:'Grupos', opor:'Oportunidades', 'meu-perfil':'Meu Perfil', msgs:'Mensagens', admin:'Painel Admin' };
+const pageTitles = { feed:'Feed de Negócios', grupos:'Grupos', opor:'Oportunidades', 'meu-perfil':'Meu Perfil', msgs:'Mensagens', admin:'Painel Admin', 'pub-perfil':'Perfil' };
 
 function goPage(p) {
   document.querySelectorAll('.page').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
@@ -1551,6 +1717,9 @@ function goPage(p) {
   if (tt) tt.textContent = pageTitles[p] || '';
   if (p === 'msgs' && currentUser) loadConversations();
   if (p === 'admin' && isAdmin) loadAdminData();
+  // Show/hide back button
+  const backBtn = document.getElementById('topbar-back');
+  if (backBtn) backBtn.style.display = p === 'pub-perfil' ? 'flex' : 'none';
   // Sync bottom nav
   setBottomNav(p);
 }
