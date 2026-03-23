@@ -1051,7 +1051,7 @@ function renderPost(p) {
     </div>
     <div class="post-body">${p.content}</div>
     <div class="post-footer">
-      <button class="post-btn ${myLikes.has(p.id)?'liked':''}" onclick="toggleLike(this,'${p.id}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 9l3-6 2 3 2-2 3 5H1z"/></svg>${p.likes||0}</button>
+      <button class="post-btn ${myLikes.has(p.id)?'liked':''}" onclick="toggleLike(this,'${p.id}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 9l3-6 2 3 2-2 3 5H1z"/></svg><span class="like-count">${p.likes||0}</span></button>
       ${isMe ? `<button class="post-btn" style="margin-left:auto;color:var(--red);" onclick="deletePost('${p.id}',this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h10M5 4V2h4v2M6 7v4M8 7v4M3 4l1 8h6l1-8"/></svg>Excluir</button>` : `<button class="post-btn" style="margin-left:auto;" onclick="startDirectMessage('${p.user_id}','${(p.author_meta?.nome||'Empresário').replace(/'/g,'')}','${(p.author_meta?.empresa||'').replace(/'/g,'')}')" ><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>Mensagem</button>`}
     </div>
   </div>`;
@@ -1095,23 +1095,31 @@ async function toggleLike(btn, postId) {
   if (!currentUser) { toast('Faça login para curtir', 'error'); return; }
   if (btn.disabled) return;
   btn.disabled = true;
+
+  // Get current count from data attribute (reliable)
   const isLiked = btn.classList.contains('liked');
-  const m = btn.textContent.trim().match(/\d+/);
-  const current = m ? parseInt(m[0]) : 0;
+  const countEl = btn.querySelector('.like-count');
+  const current = countEl ? parseInt(countEl.textContent) || 0 : 0;
 
   if (isLiked) {
-    // Remove like
-    await sb.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
-    await sb.from('posts').update({ likes: Math.max(0, current - 1) }).eq('id', postId);
-    btn.classList.remove('liked');
-    btn.innerHTML = btn.innerHTML.replace(/\d+/, Math.max(0, current - 1));
+    const { error } = await sb.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
+    if (!error) {
+      const newCount = Math.max(0, current - 1);
+      await sb.from('posts').update({ likes: newCount }).eq('id', postId);
+      btn.classList.remove('liked');
+      if (countEl) countEl.textContent = newCount;
+      myLikes.delete(postId);
+    }
   } else {
-    // Add like
     const { error } = await sb.from('likes').insert({ user_id: currentUser.id, post_id: postId });
     if (!error) {
-      await sb.from('posts').update({ likes: current + 1 }).eq('id', postId);
+      const newCount = current + 1;
+      await sb.from('posts').update({ likes: newCount }).eq('id', postId);
       btn.classList.add('liked');
-      btn.innerHTML = btn.innerHTML.replace(/\d+/, current + 1);
+      if (countEl) countEl.textContent = newCount;
+      myLikes.add(postId);
+    } else {
+      toast('Você já curtiu este post!', 'error');
     }
   }
   btn.disabled = false;
