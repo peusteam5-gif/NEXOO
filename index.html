@@ -150,6 +150,12 @@ select.form-input { cursor: pointer; }
 .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 .topbar { height: 56px; min-height: 56px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; }
 .topbar-title { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--text); }
+.mobile-topbar { display: none; height: 52px; min-height: 52px; background: var(--surface); border-bottom: 1px solid var(--border); align-items: center; justify-content: space-between; padding: 0 16px; }
+.mobile-topbar-logo { font-family: var(--font-head); font-size: 20px; font-weight: 800; color: var(--accent); letter-spacing: -0.5px; }
+.mobile-topbar-actions { display: flex; gap: 8px; align-items: center; }
+.mobile-icon-btn { width: 34px; height: 34px; border-radius: 8px; background: none; border: none; color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+.mobile-icon-btn:hover { color: var(--text); }
+.mobile-notif-dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); }
 .search-bar { flex: 1; max-width: 340px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 8px; padding: 7px 12px; margin-left: auto; }
 .search-bar input { background: none; border: none; outline: none; color: var(--text); font-family: var(--font-body); font-size: 13px; flex: 1; min-width: 0; }
 .search-bar input::placeholder { color: var(--muted); }
@@ -321,6 +327,13 @@ select.form-input { cursor: pointer; }
   .app { overflow:hidden; }
   #mobile-search-btn { display:flex !important; }
   .search-bar { display:none !important; }
+  .mobile-topbar { display:flex !important; }
+  #desktop-topbar { display:none !important; }
+  .sidebar { display:none !important; }
+  .feed-col { padding: 0 0 16px !important; }
+  .stories-bar { padding: 12px 12px 8px !important; border-bottom: 1px solid var(--border); margin-bottom: 0 !important; }
+  .post-box { margin: 12px 12px 0 !important; border-radius: 10px; }
+  .post-card { margin: 12px 12px 0 !important; border-radius: 10px; }
 }
 
 /* BACK BUTTON for chat on mobile */
@@ -769,7 +782,22 @@ select.form-input { cursor: pointer; }
   </aside>
 
   <main class="main">
-    <div class="topbar">
+    <!-- MOBILE TOPBAR -->
+    <div class="mobile-topbar" id="mobile-topbar">
+      <div class="mobile-topbar-logo">Nexo</div>
+      <div class="mobile-topbar-actions">
+        <button class="mobile-icon-btn" onclick="goPage('busca');setBottomNav('busca')">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/><path d="M13 13l3 3"/></svg>
+        </button>
+        <button class="mobile-icon-btn" onclick="goPage('msgs');setBottomNav('msgs')">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h16v11H10l-4 4V12H1z"/></svg>
+          <span class="mobile-notif-dot" id="mobile-msgs-dot" style="display:none;"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- DESKTOP TOPBAR -->
+    <div class="topbar" id="desktop-topbar">
       <button id="topbar-back" onclick="history.back()||goPage('feed')" style="display:none;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0;font-family:var(--font-body);">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
         Voltar
@@ -1546,43 +1574,25 @@ async function submitPostWithMedia(mediaType) {
 }
 
 async function submitPost() {
-  const content = document.getElementById('post-content').textContent.trim();
-  if (!content && !selectedMediaFile) { toast('Escreva algo ou adicione uma mídia!', 'error'); return; }
+  const contentEl = document.getElementById('post-content');
+  const text = contentEl ? contentEl.textContent.trim() : '';
+  if (!text) { toast('Escreva algo antes de publicar!', 'error'); return; }
   if (!currentUser) { toast('Faça login para publicar', 'error'); return; }
-
   const meta = currentUser.user_metadata || {};
-  let mediaUrl = null;
-  let mediaType = null;
-
-  // Upload media if selected
-  if (selectedMediaFile) {
-    toast('Enviando mídia...', 'success');
-    const ext = selectedMediaFile.name.split('.').pop();
-    const path = currentUser.id + '/' + Date.now() + '.' + ext;
-    const { error: upErr } = await sb.storage.from('posts-media').upload(path, selectedMediaFile);
-    if (upErr) { toast('Erro ao enviar mídia: ' + upErr.message, 'error'); return; }
-    const { data } = sb.storage.from('posts-media').getPublicUrl(path);
-    mediaUrl = data.publicUrl;
-    mediaType = selectedMediaType;
-  }
-
   const { error } = await sb.from('posts').insert({
     user_id: currentUser.id,
-    content: content || '',
+    content: text,
     author_meta: {
       nome: meta.full_name || meta.name || currentUser.email.split('@')[0],
       empresa: meta.empresa || '',
       setor: meta.setor || ''
     },
-    media_url: mediaUrl,
-    media_type: mediaType,
+    media_url: null,
+    media_type: null,
     likes: 0
   });
-
   if (error) { toast('Erro ao publicar: ' + error.message, 'error'); return; }
-
-  document.getElementById('post-content').textContent = '';
-  removeMedia();
+  if (contentEl) contentEl.textContent = '';
   toast('Post publicado! 🎉', 'success');
   loadPosts();
   const { count } = await sb.from('posts').select('*',{count:'exact',head:true}).eq('user_id', currentUser.id);
@@ -1590,13 +1600,6 @@ async function submitPost() {
   document.getElementById('perfil-posts').textContent = count || 0;
 }
 
-function openLightbox(url) {
-  const lb = document.createElement('div');
-  lb.className = 'lightbox';
-  lb.innerHTML = `<button class="lightbox-close" onclick="this.parentElement.remove()">✕</button><img src="${url}">`;
-  lb.addEventListener('click', e => { if (e.target === lb) lb.remove(); });
-  document.body.appendChild(lb);
-}
 
 async function deletePost(id, btn) {
   if (!confirm('Excluir este post?')) return;
@@ -2475,6 +2478,12 @@ function goPage(p) {
   // Show/hide back button
   const backBtn = document.getElementById('topbar-back');
   if (backBtn) backBtn.style.display = p === 'pub-perfil' ? 'flex' : 'none';
+  // Mobile topbar: show on feed only
+  const mobileTopbar = document.getElementById('mobile-topbar');
+  if (mobileTopbar) mobileTopbar.style.display = window.innerWidth <= 900 ? (p === 'feed' ? 'flex' : 'none') : 'none';
+  // Desktop topbar: hide on feed mobile
+  const desktopTopbar = document.getElementById('desktop-topbar');
+  if (desktopTopbar && window.innerWidth <= 900) desktopTopbar.style.display = p === 'feed' ? 'none' : 'flex';
   // Sync bottom nav
   setBottomNav(p);
   // Save current page (except pub-perfil — needs userId context)
