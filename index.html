@@ -1054,7 +1054,7 @@ function renderPost(p) {
   const ago = timeAgo(p.created_at);
   const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
   const color = colors[nome.charCodeAt(0) % colors.length];
-  return `<div class="post-card ${isMe?'mine':''}">
+  return `<div class="post-card ${isMe?'mine':''}" data-post-id="${p.id}">
     <div class="post-header">
       <div class="post-av" style="background:${color};">${initials}</div>
       <div class="post-meta"><div class="post-name">${nome}</div><div class="post-sub">${empresa}</div></div>
@@ -1140,6 +1140,56 @@ async function loadRecentMembers() {
     const initials = (u.nome||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
     return `<div class="suggested-item"><div class="user-av" style="width:28px;height:28px;font-size:11px;">${initials}</div><div class="sug-info"><div class="sug-name">${u.nome||'Empresário'}</div><div class="sug-role">${u.empresa||u.setor||''}</div></div></div>`;
   }).join('');
+}
+
+// ===== REALTIME FEED =====
+let feedSubscription = null;
+
+function startRealtimeFeed() {
+  if (feedSubscription) feedSubscription.unsubscribe();
+  feedSubscription = sb.channel('public-feed')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'posts'
+    }, async payload => {
+      const p = payload.new;
+      // Don't show own posts twice (already added by submitPost)
+      if (p.user_id === currentUser?.id) return;
+      const container = document.getElementById('posts-container');
+      if (!container) return;
+      // Prepend new post with animation
+      const div = document.createElement('div');
+      div.innerHTML = renderPost(p);
+      const postEl = div.firstElementChild;
+      postEl.style.animation = 'none';
+      postEl.style.borderColor = 'rgba(200,240,96,0.3)';
+      postEl.style.background = 'rgba(200,240,96,0.04)';
+      container.insertBefore(postEl, container.firstChild);
+      // Show toast
+      const nome = p.author_meta?.nome || 'Alguém';
+      toast(nome + ' publicou um novo post!', 'success');
+      // Fade border back to normal after 3s
+      setTimeout(() => {
+        postEl.style.transition = 'border-color 1s, background 1s';
+        postEl.style.borderColor = '';
+        postEl.style.background = '';
+      }, 3000);
+    })
+    .on('postgres_changes', {
+      event: 'DELETE',
+      schema: 'public',
+      table: 'posts'
+    }, payload => {
+      const deleted = document.querySelector(`[data-post-id="${payload.old.id}"]`);
+      if (deleted) {
+        deleted.style.transition = 'opacity 0.3s, transform 0.3s';
+        deleted.style.opacity = '0';
+        deleted.style.transform = 'translateX(-10px)';
+        setTimeout(() => deleted.remove(), 300);
+      }
+    })
+    .subscribe();
 }
 
 // ===== NAVIGATION =====
@@ -1530,6 +1580,7 @@ async function init() {
     showApp();
     loadPosts();
     loadRecentMembers();
+    startRealtimeFeed();
   } else {
     showPage('login');
   }
