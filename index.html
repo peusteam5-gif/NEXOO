@@ -425,6 +425,29 @@ select.form-input { cursor: pointer; }
 .chart-bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
 .chart-bar-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.6s ease; }
 .chart-bar-val { font-size: 12px; color: var(--text); font-weight: 500; min-width: 20px; text-align: right; }
+
+/* ===== COMMENTS ===== */
+.comments-section { border-top: 1px solid var(--border); margin-top: 4px; }
+.comments-toggle { display: flex; align-items: center; gap: 6px; padding: 10px 0 0; font-size: 12px; color: var(--muted); cursor: pointer; transition: color 0.15s; background: none; border: none; font-family: var(--font-body); }
+.comments-toggle:hover { color: var(--text); }
+.comments-list { padding: 10px 0 4px; display: flex; flex-direction: column; gap: 10px; }
+.comment-item { display: flex; gap: 8px; align-items: flex-start; }
+.comment-av { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 10px; font-weight: 700; color: #0d0f14; flex-shrink: 0; overflow: hidden; }
+.comment-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.comment-bubble { flex: 1; background: var(--surface2); border-radius: 4px 10px 10px 10px; padding: 8px 12px; }
+.comment-name { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.comment-text { font-size: 13px; color: #c8c5be; line-height: 1.5; }
+.comment-meta { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.comment-time { font-size: 10px; color: var(--muted); }
+.comment-delete { font-size: 10px; color: var(--muted); cursor: pointer; background: none; border: none; font-family: var(--font-body); }
+.comment-delete:hover { color: var(--red); }
+.comment-input-wrap { display: flex; gap: 8px; align-items: center; padding: 8px 0 4px; }
+.comment-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; color: var(--text); font-family: var(--font-body); font-size: 13px; outline: none; transition: border-color 0.15s; }
+.comment-input:focus { border-color: rgba(200,240,96,0.3); }
+.comment-input::placeholder { color: var(--muted); }
+.comment-send { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.comment-send:hover { background: #d6f57a; }
+.comments-empty { font-size: 12px; color: var(--muted); text-align: center; padding: 8px 0; }
 </style>
 </head>
 <body>
@@ -1132,6 +1155,7 @@ async function loadPosts() {
   const syncedPosts = postsResult.data.map(p => ({ ...p, likes: countMap[p.id] || 0 }));
 
   container.innerHTML = syncedPosts.map(p => renderPost(p)).join('');
+  loadCommentCounts();
 }
 
 function demoPosts() {
@@ -1175,7 +1199,18 @@ function renderPost(p) {
     <div class="post-body">${p.content}</div>
     <div class="post-footer">
       <button class="post-btn ${myLikes.has(p.id)?'liked':''}" onclick="toggleLike(this,'${p.id}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12s-5-3.5-5-7a3.5 3.5 0 0 1 6-2.4A3.5 3.5 0 0 1 12 5c0 3.5-5 7-5 7z"/></svg><span class="like-count">${p.likes||0}</span></button>
+      <button class="post-btn" onclick="toggleComments('${p.id}',this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg><span class="comment-count">0</span></button>
       ${isMe ? `<button class="post-btn" style="margin-left:auto;color:var(--red);" onclick="deletePost('${p.id}',this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h10M5 4V2h4v2M6 7v4M8 7v4M3 4l1 8h6l1-8"/></svg>Excluir</button>` : `<button class="post-btn" style="margin-left:auto;" onclick="startDirectMessage('${p.user_id}','${(p.author_meta?.nome||'Empresário').replace(/'/g,'')}','${(p.author_meta?.empresa||'').replace(/'/g,'')}')" ><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>Mensagem</button>`}
+    </div>
+    <div class="comments-section" id="comments-${p.id}" style="display:none;">
+      <div class="comments-list" id="comments-list-${p.id}"></div>
+      <div class="comment-input-wrap">
+        <div class="comment-av" style="background:linear-gradient(135deg,#4af0b0,#c8f060);" id="comment-av-${p.id}"></div>
+        <input class="comment-input" id="comment-input-${p.id}" placeholder="Escreva um comentário..." onkeydown="if(event.key==='Enter')submitComment('${p.id}')">
+        <button class="comment-send" onclick="submitComment('${p.id}')">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#0d0f14" stroke-width="2"><path d="M2 7l10-5-4 10-1.5-4L2 7z"/></svg>
+        </button>
+      </div>
     </div>
   </div>`;
 }
@@ -1252,6 +1287,123 @@ async function loadRecentMembers() {
     const initials = (u.nome||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
     return `<div class="suggested-item"><div class="user-av" style="width:28px;height:28px;font-size:11px;">${initials}</div><div class="sug-info"><div class="sug-name">${u.nome||'Empresário'}</div><div class="sug-role">${u.empresa||u.setor||''}</div></div></div>`;
   }).join('');
+}
+
+// ===== COMMENTS =====
+const openCommentSections = new Set();
+
+async function toggleComments(postId, btn) {
+  const section = document.getElementById('comments-' + postId);
+  if (!section) return;
+  const isOpen = section.style.display !== 'none';
+  if (isOpen) {
+    section.style.display = 'none';
+    openCommentSections.delete(postId);
+  } else {
+    section.style.display = 'block';
+    openCommentSections.add(postId);
+    // Set avatar
+    const avEl = document.getElementById('comment-av-' + postId);
+    if (avEl && currentProfile) {
+      if (currentUser?.user_metadata?.avatar_url) {
+        avEl.innerHTML = `<img src="${currentUser.user_metadata.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      } else {
+        avEl.textContent = currentProfile.initials || '?';
+      }
+    }
+    await loadComments(postId);
+  }
+}
+
+async function loadComments(postId) {
+  const listEl = document.getElementById('comments-list-' + postId);
+  if (!listEl) return;
+  listEl.innerHTML = '<div class="comments-empty">Carregando...</div>';
+  const { data: comments, error } = await sb.from('comments')
+    .select('*').eq('post_id', postId)
+    .order('created_at', { ascending: true });
+  if (error || !comments || comments.length === 0) {
+    listEl.innerHTML = '<div class="comments-empty">Nenhum comentário ainda. Seja o primeiro!</div>';
+    updateCommentCount(postId, 0);
+    return;
+  }
+  updateCommentCount(postId, comments.length);
+  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+  listEl.innerHTML = comments.map(c => {
+    const nome = c.author_meta?.nome || 'Empresário';
+    const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const color = colors[nome.charCodeAt(0) % colors.length];
+    const av = c.author_meta?.avatar_url
+      ? `<img src="${c.author_meta.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      : initials;
+    const isMe = currentUser && c.user_id === currentUser.id;
+    const ago = timeAgo(c.created_at);
+    return `<div class="comment-item" id="comment-item-${c.id}">
+      <div class="comment-av" style="background:${color};">${av}</div>
+      <div class="comment-bubble">
+        <div class="comment-name">${nome}</div>
+        <div class="comment-text">${c.content}</div>
+        <div class="comment-meta">
+          <span class="comment-time">${ago}</span>
+          ${isMe ? `<button class="comment-delete" onclick="deleteComment('${c.id}','${postId}')">Excluir</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateCommentCount(postId, count) {
+  const postEl = document.querySelector(`[data-post-id="${postId}"]`);
+  if (!postEl) return;
+  const countEl = postEl.querySelector('.comment-count');
+  if (countEl) countEl.textContent = count;
+}
+
+async function submitComment(postId) {
+  const input = document.getElementById('comment-input-' + postId);
+  if (!input) return;
+  const content = input.value.trim();
+  if (!content) return;
+  if (!currentUser) { toast('Faça login para comentar', 'error'); return; }
+  input.value = '';
+  const meta = currentUser.user_metadata || {};
+  const { error } = await sb.from('comments').insert({
+    post_id: postId,
+    user_id: currentUser.id,
+    content,
+    author_meta: {
+      nome: meta.full_name || meta.name || currentUser.email.split('@')[0],
+      empresa: meta.empresa || '',
+      avatar_url: meta.avatar_url || ''
+    }
+  });
+  if (error) { toast('Erro ao comentar: ' + error.message, 'error'); return; }
+  await loadComments(postId);
+}
+
+async function deleteComment(commentId, postId) {
+  if (!confirm('Excluir comentário?')) return;
+  await sb.from('comments').delete().eq('id', commentId);
+  document.getElementById('comment-item-' + commentId)?.remove();
+  // Update count
+  const listEl = document.getElementById('comments-list-' + postId);
+  const remaining = listEl ? listEl.querySelectorAll('.comment-item').length : 0;
+  updateCommentCount(postId, remaining);
+  if (remaining === 0 && listEl) {
+    listEl.innerHTML = '<div class="comments-empty">Nenhum comentário ainda. Seja o primeiro!</div>';
+  }
+}
+
+// Load comment counts for all visible posts
+async function loadCommentCounts() {
+  const posts = document.querySelectorAll('[data-post-id]');
+  if (!posts.length) return;
+  const ids = [...posts].map(p => p.getAttribute('data-post-id'));
+  const { data } = await sb.from('comments').select('post_id').in('post_id', ids);
+  if (!data) return;
+  const countMap = {};
+  data.forEach(c => { countMap[c.post_id] = (countMap[c.post_id] || 0) + 1; });
+  ids.forEach(id => updateCommentCount(id, countMap[id] || 0));
 }
 
 // ===== MOBILE NAV =====
