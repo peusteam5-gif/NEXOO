@@ -188,7 +188,9 @@ select.form-input { cursor: pointer; }
 .post-footer { display: flex; gap: 4px; border-top: 1px solid var(--border); padding-top: 12px; }
 .post-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 7px; background: none; border: none; color: var(--muted); font-size: 12px; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; }
 .post-btn:hover { background: var(--surface2); color: var(--text); }
-.post-btn.liked { color: var(--accent); }
+.post-btn.liked { color: var(--accent) !important; }
+.post-btn.liked svg { stroke: var(--accent) !important; fill: rgba(200,240,96,0.35); }
+.post-btn.liked .like-count { color: var(--accent) !important; font-weight: 500; }
 .right-col { width: 300px; min-width: 300px; padding: 24px 20px; border-left: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
 .panel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .panel-header { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
@@ -1010,7 +1012,14 @@ async function loadPosts() {
     container.innerHTML = `<div class="empty-feed"><div class="e-icon">✍️</div><div class="e-title">Nenhum post ainda</div><div class="e-sub">Seja o primeiro a publicar na Nexo!</div></div>`;
     return;
   }
-  container.innerHTML = postsResult.data.map(p => renderPost(p)).join('');
+  // Sync like counts from likes table (source of truth)
+  const postIds = postsResult.data.map(p => p.id);
+  const { data: likeCounts } = await sb.from('likes').select('post_id').in('post_id', postIds);
+  const countMap = {};
+  (likeCounts || []).forEach(l => { countMap[l.post_id] = (countMap[l.post_id] || 0) + 1; });
+  const syncedPosts = postsResult.data.map(p => ({ ...p, likes: countMap[p.id] || 0 }));
+
+  container.innerHTML = syncedPosts.map(p => renderPost(p)).join('');
 }
 
 function demoPosts() {
@@ -1024,7 +1033,7 @@ function demoPosts() {
       <div class="post-body">Fechei parceria com 3 fornecedores premium! Quem tiver salão em SP, me chame. Condições exclusivas para membros da Nexo 🤝</div>
       <div class="post-tags"><span class="post-tag acc">#parceria</span><span class="post-tag">#beleza</span></div>
       <div class="post-footer">
-        <button class="post-btn" onclick="toggleLike(this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 9l3-6 2 3 2-2 3 5H1z"/></svg>34</button>
+        <button class="post-btn" onclick="toggleLike(this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12s-5-3.5-5-7a3.5 3.5 0 0 1 6-2.4A3.5 3.5 0 0 1 12 5c0 3.5-5 7-5 7z"/></svg>34</button>
         <button class="post-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>8</button>
       </div>
     </div>
@@ -1053,7 +1062,7 @@ function renderPost(p) {
     </div>
     <div class="post-body">${p.content}</div>
     <div class="post-footer">
-      <button class="post-btn ${myLikes.has(p.id)?'liked':''}" onclick="toggleLike(this,'${p.id}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 9l3-6 2 3 2-2 3 5H1z"/></svg><span class="like-count">${p.likes||0}</span></button>
+      <button class="post-btn ${myLikes.has(p.id)?'liked':''}" onclick="toggleLike(this,'${p.id}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12s-5-3.5-5-7a3.5 3.5 0 0 1 6-2.4A3.5 3.5 0 0 1 12 5c0 3.5-5 7-5 7z"/></svg><span class="like-count">${p.likes||0}</span></button>
       ${isMe ? `<button class="post-btn" style="margin-left:auto;color:var(--red);" onclick="deletePost('${p.id}',this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h10M5 4V2h4v2M6 7v4M8 7v4M3 4l1 8h6l1-8"/></svg>Excluir</button>` : `<button class="post-btn" style="margin-left:auto;" onclick="startDirectMessage('${p.user_id}','${(p.author_meta?.nome||'Empresário').replace(/'/g,'')}','${(p.author_meta?.empresa||'').replace(/'/g,'')}')" ><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>Mensagem</button>`}
     </div>
   </div>`;
@@ -1098,32 +1107,25 @@ async function toggleLike(btn, postId) {
   if (btn.disabled) return;
   btn.disabled = true;
 
-  // Get current count from data attribute (reliable)
   const isLiked = btn.classList.contains('liked');
   const countEl = btn.querySelector('.like-count');
-  const current = countEl ? parseInt(countEl.textContent) || 0 : 0;
 
   if (isLiked) {
-    const { error } = await sb.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
-    if (!error) {
-      const newCount = Math.max(0, current - 1);
-      await sb.from('posts').update({ likes: newCount }).eq('id', postId);
-      btn.classList.remove('liked');
-      if (countEl) countEl.textContent = newCount;
-      myLikes.delete(postId);
-    }
+    await sb.from('likes').delete().eq('user_id', currentUser.id).eq('post_id', postId);
+    myLikes.delete(postId);
+    btn.classList.remove('liked');
   } else {
     const { error } = await sb.from('likes').insert({ user_id: currentUser.id, post_id: postId });
-    if (!error) {
-      const newCount = current + 1;
-      await sb.from('posts').update({ likes: newCount }).eq('id', postId);
-      btn.classList.add('liked');
-      if (countEl) countEl.textContent = newCount;
-      myLikes.add(postId);
-    } else {
-      toast('Você já curtiu este post!', 'error');
-    }
+    if (error) { btn.disabled = false; return; }
+    myLikes.add(postId);
+    btn.classList.add('liked');
   }
+
+  // Always recalculate from DB — source of truth
+  const { count } = await sb.from('likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+  const realCount = count || 0;
+  await sb.from('posts').update({ likes: realCount }).eq('id', postId);
+  if (countEl) countEl.textContent = realCount;
   btn.disabled = false;
 }
 
