@@ -174,6 +174,7 @@ select.form-input { cursor: pointer; }
 .post-box-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .post-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--muted); font-family: var(--font-body); font-size: 13.5px; cursor: text; outline: none; transition: border-color 0.15s; }
 .post-input:focus { border-color: rgba(200,240,96,0.3); color: var(--text); }
+.post-input:empty:before { content: attr(data-placeholder); color: var(--muted); pointer-events: none; }
 .post-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .post-action-btn { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 7px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); font-size: 12px; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; }
 .post-action-btn:hover { color: var(--text); }
@@ -850,7 +851,7 @@ select.form-input { cursor: pointer; }
           <div id="post-panel-texto">
             <div class="post-box-top">
               <div class="user-av" id="feed-av" style="width:32px;height:32px;font-size:11px;">?</div>
-              <div contenteditable="true" class="post-input" id="post-content" placeholder="Compartilhe algo com sua rede de empresários…"></div>
+              <div contenteditable="true" class="post-input" id="post-content" data-placeholder="Compartilhe algo com sua rede de empresários…" onblur="if(!this.innerText.trim())this.innerHTML=''" onfocus="if(!this.innerText.trim())this.innerHTML=''"></div>
             </div>
             <div class="post-actions">
               <button class="post-action-btn" onclick="submitPost()" style="margin-left:auto;background:var(--accent-dim);border-color:rgba(200,240,96,0.3);color:var(--accent);">
@@ -1575,7 +1576,7 @@ async function submitPostWithMedia(mediaType) {
 
 async function submitPost() {
   const contentEl = document.getElementById('post-content');
-  const text = contentEl ? contentEl.textContent.trim() : '';
+  const text = contentEl ? (contentEl.innerText || contentEl.textContent || '').trim() : '';
   if (!text) { toast('Escreva algo antes de publicar!', 'error'); return; }
   if (!currentUser) { toast('Faça login para publicar', 'error'); return; }
   const meta = currentUser.user_metadata || {};
