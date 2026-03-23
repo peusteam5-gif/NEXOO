@@ -1436,7 +1436,7 @@ async function loadPosts() {
   myLikes = new Set((likesResult.data || []).map(l => l.post_id));
 
   if (postsResult.error) {
-    container.innerHTML = demoPosts();
+    container.innerHTML = '<div class="empty-feed"><div class="e-icon">✍️</div><div class="e-title">Nenhum post ainda</div><div class="e-sub">Seja o primeiro a publicar!</div></div>';
     return;
   }
   if (!postsResult.data || postsResult.data.length === 0) {
@@ -1455,28 +1455,7 @@ async function loadPosts() {
   loadStories();
 }
 
-function demoPosts() {
-  return `
-    <div class="post-card featured">
-      <div class="post-header">
-        <div class="post-av" style="background:linear-gradient(135deg,#f0c040,#ff8c40);">MS</div>
-        <div class="post-meta"><div class="post-name">Marina Souza ✓</div><div class="post-sub">Fundadora · Bella Estética · SP</div></div>
-        <div class="post-time">2h</div>
-      </div>
-      <div class="post-body">Fechei parceria com 3 fornecedores premium! Quem tiver salão em SP, me chame. Condições exclusivas para membros da Nexo 🤝</div>
-      <div class="post-tags"><span class="post-tag acc">#parceria</span><span class="post-tag">#beleza</span></div>
-      <div class="post-footer">
-        <button class="post-btn" onclick="toggleLike(this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12s-5-3.5-5-7a3.5 3.5 0 0 1 6-2.4A3.5 3.5 0 0 1 12 5c0 3.5-5 7-5 7z"/></svg>34</button>
-        <button class="post-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>8</button>
-      </div>
-    </div>
-    <div class="post-card" style="border:1px dashed rgba(200,240,96,0.2);background:rgba(200,240,96,0.03);">
-      <div style="text-align:center;padding:16px 0;">
-        <div style="font-size:13px;color:var(--muted);margin-bottom:8px;">⚡ Configure o banco de dados para ver posts reais</div>
-        <div style="font-size:12px;color:var(--muted);">Execute o SQL abaixo no Supabase → SQL Editor</div>
-      </div>
-    </div>`;
-}
+
 
 function renderPost(p) {
   const isMe = currentUser && p.user_id === currentUser.id;
@@ -2998,25 +2977,7 @@ async function init() {
 init();
 </script>
 
-<!-- SQL SETUP HELPER -->
-<div id="sql-helper" style="display:none; position:fixed; bottom:16px; right:16px; background:var(--surface); border:1px solid rgba(200,240,96,0.3); border-radius:12px; padding:16px; max-width:340px; z-index:9998; font-size:12px;">
-  <div style="font-weight:600;color:var(--accent);margin-bottom:8px;">⚡ Configure o banco de dados</div>
-  <div style="color:var(--muted);margin-bottom:10px;">Execute este SQL no Supabase → SQL Editor:</div>
-  <pre style="background:var(--surface2);border-radius:6px;padding:10px;font-size:11px;color:var(--text);overflow-x:auto;white-space:pre-wrap;">create table posts (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users not null,
-  content text not null,
-  author_meta jsonb,
-  likes int default 0,
-  created_at timestamptz default now()
-);
-alter table posts enable row level security;
-create policy "Todos leem" on posts for select using (true);
-create policy "Dono publica" on posts for insert with check (auth.uid() = user_id);
-create policy "Dono deleta" on posts for delete using (auth.uid() = user_id);</pre>
-  <button onclick="document.getElementById('sql-helper').style.display='none'" style="width:100%;margin-top:10px;padding:7px;border-radius:6px;background:var(--accent);color:#0d0f14;font-size:12px;font-weight:600;border:none;cursor:pointer;">Entendido!</button>
-</div>
-<script>setTimeout(()=>{document.getElementById('sql-helper').style.display='block'},3000);</script>
 
 </body>
 </html>
+
