@@ -1531,15 +1531,15 @@ async function openPublicProfile(userId) {
 
   // Load profile, posts, follow status in parallel
   const [profileRes, postsRes, followRes, followersRes, followingRes] = await Promise.all([
-    sb.from('profiles').select('*').eq('id', userId).single(),
+    sb.from('profiles').select('*').eq('id', userId).maybeSingle(),
     sb.from('posts').select('*').eq('user_id', userId).order('created_at', {ascending: false}).limit(10),
-    sb.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', userId).single(),
+    sb.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', userId).limit(1),
     sb.from('follows').select('id', {count:'exact',head:true}).eq('following_id', userId),
     sb.from('follows').select('id', {count:'exact',head:true}).eq('follower_id', userId)
   ]);
 
   const posts = postsRes.data || [];
-  const isFollowing = !!followRes.data;
+  const isFollowing = !!(followRes.data && followRes.data.length > 0);
   const followersCount = followersRes.count || 0;
   const followingCount = followingRes.count || 0;
 
