@@ -514,6 +514,28 @@ select.form-input { cursor: pointer; }
 @media(max-width:900px) {
   .search-dropdown { width: calc(100vw - 24px); top: 56px; left: 12px; transform: none; }
 }
+
+/* ===== BUSCA MOBILE PAGE ===== */
+#page-busca { flex-direction: column; }
+.busca-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.busca-input-wrap { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.busca-input-field { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; color: var(--text); font-family: var(--font-body); font-size: 14px; outline: none; transition: border-color 0.15s; }
+.busca-input-field:focus { border-color: rgba(200,240,96,0.4); }
+.busca-input-field::placeholder { color: var(--muted); }
+.busca-results { flex: 1; overflow-y: auto; }
+.busca-section-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 14px 16px 6px; }
+.busca-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; transition: background 0.12s; border-bottom: 0.5px solid var(--border); }
+.busca-item:hover { background: var(--surface2); }
+.busca-av { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 14px; font-weight: 700; color: #0d0f14; flex-shrink: 0; overflow: hidden; }
+.busca-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.busca-av.post { border-radius: 10px; background: var(--surface2); font-size: 16px; }
+.busca-info { flex: 1; min-width: 0; }
+.busca-nome { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+.busca-sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.busca-tag { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(200,240,96,0.2); flex-shrink: 0; }
+.busca-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 60px 20px; color: var(--muted); }
+.busca-empty-icon { font-size: 32px; }
+.busca-empty-text { font-size: 14px; text-align: center; }
 </style>
 </head>
 <body>
@@ -776,6 +798,21 @@ select.form-input { cursor: pointer; }
       <div style="font-size:13px;color:var(--muted);">Esta seção será conectada ao banco de dados na próxima fase.</div>
     </div>
 
+    <!-- BUSCA GLOBAL -->
+    <div id="page-busca" class="page">
+      <div class="busca-wrap">
+        <div class="busca-input-wrap">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M11 11l3 3"/></svg>
+          <input class="busca-input-field" id="busca-input" placeholder="Buscar pessoas, posts, empresas…" oninput="onBuscaInput(this.value)" autofocus>
+          <button onclick="onBuscaInput('');document.getElementById('busca-input').value=''" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0;line-height:1;" id="busca-clear" style="display:none">✕</button>
+        </div>
+        <div class="busca-results" id="busca-results">
+          <div class="busca-section-title">Membros recentes</div>
+          <div id="busca-initial"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- PERFIL PÚBLICO -->
     <div id="page-pub-perfil" class="page">
       <div class="pub-perfil-wrap">
@@ -850,9 +887,9 @@ select.form-input { cursor: pointer; }
       <span class="bn-badge" id="bn-msgs-badge" style="display:none">0</span>
       Msgs
     </div>
-    <div class="bn-item" id="bn-grupos" onclick="goPage('grupos');setBottomNav('grupos')">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c0-2.2 1.8-4 4-4h4c2.2 0 4 1.8 4 4"/><circle cx="6" cy="5" r="2"/><circle cx="10" cy="5" r="2"/></svg>
-      Grupos
+    <div class="bn-item" id="bn-busca" onclick="goPage('busca');setBottomNav('busca');setTimeout(()=>document.getElementById('busca-input')?.focus(),200)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M11 11l3 3"/></svg>
+      Buscar
     </div>
     <div class="bn-item" id="bn-opor" onclick="goPage('opor');setBottomNav('opor')">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l2 4h4l-3 3 1 5-4-2.5L4 13l1-5L2 5h4z"/></svg>
@@ -1687,6 +1724,104 @@ async function loadMyFollowing() {
 }
 
 // ===== BUSCA GLOBAL =====
+let buscaTimer = null;
+
+async function loadBuscaInicial() {
+  const container = document.getElementById('busca-initial');
+  if (!container) return;
+  const { data: users } = await sb.from('profiles').select('id, nome, empresa, setor, avatar_url').neq('id', currentUser?.id).order('created_at', {ascending: false}).limit(10);
+  renderBuscaUsers(container, users || []);
+}
+
+function renderBuscaUsers(container, users) {
+  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+  if (!users.length) {
+    container.innerHTML = '<div class="busca-empty"><div class="busca-empty-icon">👥</div><div class="busca-empty-text">Nenhum membro encontrado</div></div>';
+    return;
+  }
+  container.innerHTML = users.map(u => {
+    const nome = u.nome || 'Empresário';
+    const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const color = colors[nome.charCodeAt(0) % colors.length];
+    const av = u.avatar_url ? `<img src="${u.avatar_url}">` : initials;
+    return `<div class="busca-item" onclick="goPage('pub-perfil');openPublicProfile('${u.id}')">
+      <div class="busca-av" style="background:${color};">${av}</div>
+      <div class="busca-info">
+        <div class="busca-nome">${nome}</div>
+        <div class="busca-sub">${u.empresa || u.setor || 'Membro da Nexo'}</div>
+      </div>
+      <div class="busca-tag">Ver perfil</div>
+    </div>`;
+  }).join('');
+}
+
+function onBuscaInput(val) {
+  clearTimeout(buscaTimer);
+  const clearBtn = document.getElementById('busca-clear');
+  if (clearBtn) clearBtn.style.display = val.length > 0 ? 'block' : 'none';
+  if (val.trim().length === 0) {
+    document.getElementById('busca-results').innerHTML = '<div class="busca-section-title">Membros recentes</div><div id="busca-initial"></div>';
+    loadBuscaInicial();
+    return;
+  }
+  const resultsEl = document.getElementById('busca-results');
+  resultsEl.innerHTML = '<div class="busca-empty"><div class="busca-empty-icon">🔍</div><div class="busca-empty-text">Buscando...</div></div>';
+  buscaTimer = setTimeout(async () => {
+    const q = val.trim();
+    const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+
+    const [usersRes, postsRes] = await Promise.all([
+      sb.from('profiles').select('id, nome, empresa, setor, avatar_url').or(`nome.ilike.%${q}%,empresa.ilike.%${q}%,setor.ilike.%${q}%,cidade.ilike.%${q}%`).neq('id', currentUser?.id).limit(8),
+      sb.from('posts').select('id, content, user_id, author_meta, likes').ilike('content', `%${q}%`).order('created_at', {ascending:false}).limit(5)
+    ]);
+
+    const users = usersRes.data || [];
+    const posts = postsRes.data || [];
+    let html = '';
+
+    if (users.length === 0 && posts.length === 0) {
+      resultsEl.innerHTML = `<div class="busca-empty"><div class="busca-empty-icon">😕</div><div class="busca-empty-text">Nenhum resultado para "<strong>${q}</strong>"</div></div>`;
+      return;
+    }
+
+    if (users.length > 0) {
+      html += `<div class="busca-section-title">Pessoas (${users.length})</div>`;
+      html += users.map(u => {
+        const nome = u.nome || 'Empresário';
+        const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+        const color = colors[nome.charCodeAt(0) % colors.length];
+        const av = u.avatar_url ? `<img src="${u.avatar_url}">` : initials;
+        return `<div class="busca-item" onclick="openPublicProfile('${u.id}')">
+          <div class="busca-av" style="background:${color};">${av}</div>
+          <div class="busca-info">
+            <div class="busca-nome">${nome}</div>
+            <div class="busca-sub">${u.empresa || u.setor || 'Membro da Nexo'}</div>
+          </div>
+          <div class="busca-tag">Perfil</div>
+        </div>`;
+      }).join('');
+    }
+
+    if (posts.length > 0) {
+      html += `<div class="busca-section-title">Posts (${posts.length})</div>`;
+      html += posts.map(p => {
+        const nome = p.author_meta?.nome || 'Empresário';
+        const preview = p.content.length > 100 ? p.content.slice(0,100) + '...' : p.content;
+        return `<div class="busca-item" onclick="goPage('feed')">
+          <div class="busca-av post">📝</div>
+          <div class="busca-info">
+            <div class="busca-nome" style="font-weight:400;font-size:13px;">${preview}</div>
+            <div class="busca-sub">${nome} · ❤️ ${p.likes || 0}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    resultsEl.innerHTML = html;
+  }, 350);
+}
+
+// ===== BUSCA GLOBAL (desktop dropdown) =====
 let searchTimer = null;
 let searchDropdown = null;
 
@@ -1900,7 +2035,7 @@ function startRealtimeFeed() {
 }
 
 // ===== NAVIGATION =====
-const pageTitles = { feed:'Feed de Negócios', grupos:'Grupos', opor:'Oportunidades', 'meu-perfil':'Meu Perfil', msgs:'Mensagens', admin:'Painel Admin', 'pub-perfil':'Perfil' };
+const pageTitles = { feed:'Feed de Negócios', grupos:'Grupos', opor:'Oportunidades', 'meu-perfil':'Meu Perfil', msgs:'Mensagens', admin:'Painel Admin', 'pub-perfil':'Perfil', busca:'Buscar' };
 
 function goPage(p) {
   document.querySelectorAll('.page').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
@@ -1913,6 +2048,7 @@ function goPage(p) {
   if (tt) tt.textContent = pageTitles[p] || '';
   if (p === 'msgs' && currentUser) loadConversations();
   if (p === 'admin' && isAdmin) loadAdminData();
+  if (p === 'busca') loadBuscaInicial();
   // Show/hide back button
   const backBtn = document.getElementById('topbar-back');
   if (backBtn) backBtn.style.display = p === 'pub-perfil' ? 'flex' : 'none';
