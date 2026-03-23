@@ -555,6 +555,7 @@ select.form-input { cursor: pointer; }
 .story-ring { width: 56px; height: 56px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
 .story-ring.seen { background: var(--surface2); }
 .story-ring.add { background: var(--surface2); border: 2px dashed var(--border2); }
+.story-ring.mine { background: linear-gradient(135deg, var(--accent2), var(--accent)); }
 .story-av { width: 100%; height: 100%; border-radius: 50%; background: var(--surface); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 16px; font-weight: 700; color: #0d0f14; overflow: hidden; border: 2px solid var(--surface); }
 .story-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .story-name { font-size: 10px; color: var(--muted); max-width: 56px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -579,6 +580,11 @@ select.form-input { cursor: pointer; }
 .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 8000; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .lightbox img { max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 4px; }
 .lightbox-close { position: absolute; top: 16px; right: 16px; color: #fff; font-size: 28px; cursor: pointer; background: none; border: none; line-height: 1; }
+
+/* POST TABS */
+.post-tab { padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--muted); background: none; border: 1px solid transparent; font-family: var(--font-body); transition: all 0.15s; }
+.post-tab:hover { color: var(--text); background: var(--surface2); }
+.post-tab.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(200,240,96,0.2); }
 </style>
 </head>
 <body>
@@ -793,45 +799,83 @@ select.form-input { cursor: pointer; }
         <!-- Caixa de post -->
         <!-- STORIES BAR -->
         <div class="stories-bar" id="stories-bar">
-          <div class="story-item" onclick="openAddStory()">
+          <div class="story-item" onclick="openAddStoryModal()">
             <div class="story-ring add">
               <div class="story-av" style="background:var(--surface2);">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M10 4v12M4 10h12"/></svg>
               </div>
             </div>
-            <div class="story-name">Seu story</div>
+            <div class="story-name">+ Story</div>
           </div>
         </div>
 
         <!-- POST BOX -->
         <div class="post-box">
-          <div class="post-box-top">
-            <div class="user-av" id="feed-av" style="width:32px;height:32px;font-size:11px;">?</div>
-            <div contenteditable="true" class="post-input" id="post-content" placeholder="Compartilhe algo com sua rede de empresários…"></div>
+          <!-- Tabs: Post / Foto / Vídeo -->
+          <div style="display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:10px;">
+            <button class="post-tab active" id="tab-texto" onclick="switchPostTab('texto')">✏️ Post</button>
+            <button class="post-tab" id="tab-foto" onclick="switchPostTab('foto')">📷 Foto</button>
+            <button class="post-tab" id="tab-video" onclick="switchPostTab('video')">🎥 Vídeo</button>
           </div>
-          <!-- Media preview -->
-          <div id="media-preview" style="display:none;" class="post-media-preview">
-            <div id="media-preview-content"></div>
-            <button class="media-remove-btn" onclick="removeMedia()">✕</button>
+
+          <!-- TAB: Texto -->
+          <div id="post-panel-texto">
+            <div class="post-box-top">
+              <div class="user-av" id="feed-av" style="width:32px;height:32px;font-size:11px;">?</div>
+              <div contenteditable="true" class="post-input" id="post-content" placeholder="Compartilhe algo com sua rede de empresários…"></div>
+            </div>
+            <div class="post-actions">
+              <button class="post-action-btn" onclick="submitPost()" style="margin-left:auto;background:var(--accent-dim);border-color:rgba(200,240,96,0.3);color:var(--accent);">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l4-4 4 4M6.5 3v7"/></svg>
+                Publicar
+              </button>
+            </div>
           </div>
-          <input type="file" id="media-input" style="display:none;" accept="image/*,video/*" onchange="onMediaSelected(this)">
-          <div class="post-actions">
-            <button class="post-action-btn" id="img-btn" onclick="document.getElementById('media-input').accept='image/*';document.getElementById('media-input').click()">
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="11" height="11" rx="2"/><path d="M1 9l3-3 2.5 2.5 2-2 4 4"/><circle cx="9" cy="4" r="1"/></svg>
-              Foto
-            </button>
-            <button class="post-action-btn" id="vid-btn" onclick="document.getElementById('media-input').accept='video/*';document.getElementById('media-input').click()">
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="8" height="9" rx="1.5"/><path d="M9 5l3-2v7l-3-2V5z"/></svg>
-              Vídeo
-            </button>
-            <button class="post-action-btn" onclick="openAddStory()">
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="5.5"/><circle cx="6.5" cy="6.5" r="2.5"/></svg>
-              Story
-            </button>
-            <button class="post-action-btn" onclick="submitPost()" style="margin-left:auto;background:var(--accent-dim);border-color:rgba(200,240,96,0.3);color:var(--accent);">
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l4-4 4 4M6.5 3v7"/></svg>
-              Publicar
-            </button>
+
+          <!-- TAB: Foto -->
+          <div id="post-panel-foto" style="display:none;">
+            <div class="post-box-top">
+              <div class="user-av" style="width:32px;height:32px;font-size:11px;" id="feed-av-foto">?</div>
+              <div contenteditable="true" class="post-input" id="post-content-foto" placeholder="Adicione uma legenda à foto (opcional)…"></div>
+            </div>
+            <input type="file" id="foto-input" style="display:none;" accept="image/*" onchange="onMediaSelected(this,'foto')">
+            <div id="foto-preview" style="display:none;" class="post-media-preview">
+              <div id="foto-preview-content"></div>
+              <button class="media-remove-btn" onclick="removeMediaTab('foto')">✕</button>
+            </div>
+            <div class="post-actions">
+              <button class="post-action-btn" id="foto-select-btn" onclick="document.getElementById('foto-input').click()">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="11" height="11" rx="2"/><path d="M1 9l3-3 2.5 2.5 2-2 4 4"/><circle cx="9" cy="4" r="1"/></svg>
+                Escolher foto
+              </button>
+              <button class="post-action-btn" onclick="submitPostWithMedia('image')" style="margin-left:auto;background:var(--accent-dim);border-color:rgba(200,240,96,0.3);color:var(--accent);">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l4-4 4 4M6.5 3v7"/></svg>
+                Publicar foto
+              </button>
+            </div>
+          </div>
+
+          <!-- TAB: Vídeo -->
+          <div id="post-panel-video" style="display:none;">
+            <div class="post-box-top">
+              <div class="user-av" style="width:32px;height:32px;font-size:11px;" id="feed-av-video">?</div>
+              <div contenteditable="true" class="post-input" id="post-content-video" placeholder="Adicione uma descrição ao vídeo (opcional)…"></div>
+            </div>
+            <input type="file" id="video-input" style="display:none;" accept="video/*" onchange="onMediaSelected(this,'video')">
+            <div id="video-preview" style="display:none;" class="post-media-preview">
+              <div id="video-preview-content"></div>
+              <button class="media-remove-btn" onclick="removeMediaTab('video')">✕</button>
+            </div>
+            <div class="post-actions">
+              <button class="post-action-btn" id="video-select-btn" onclick="document.getElementById('video-input').click()">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="8" height="9" rx="1.5"/><path d="M9 5l3-2v7l-3-2V5z"/></svg>
+                Escolher vídeo
+              </button>
+              <button class="post-action-btn" onclick="submitPostWithMedia('video')" style="margin-left:auto;background:var(--accent-dim);border-color:rgba(200,240,96,0.3);color:var(--accent);">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l4-4 4 4M6.5 3v7"/></svg>
+                Publicar vídeo
+              </button>
+            </div>
           </div>
         </div>
         <div id="posts-container">
@@ -1420,37 +1464,85 @@ function renderPost(p) {
   </div>`;
 }
 
-let selectedMediaFile = null;
-let selectedMediaType = null;
-
-function onMediaSelected(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 50 * 1024 * 1024) { toast('Arquivo muito grande! Máximo 50MB', 'error'); return; }
-  selectedMediaFile = file;
-  selectedMediaType = file.type.startsWith('video/') ? 'video' : 'image';
-  const preview = document.getElementById('media-preview');
-  const previewContent = document.getElementById('media-preview-content');
-  const url = URL.createObjectURL(file);
-  if (selectedMediaType === 'video') {
-    previewContent.innerHTML = `<video src="${url}" controls style="width:100%;max-height:200px;border-radius:8px;background:#000;"></video>`;
-  } else {
-    previewContent.innerHTML = `<img src="${url}" style="width:100%;max-height:240px;object-fit:cover;border-radius:8px;">`;
-  }
-  preview.style.display = 'block';
-  const imgBtn = document.getElementById('img-btn');
-  const vidBtn = document.getElementById('vid-btn');
-  if (imgBtn) imgBtn.classList.toggle('active', selectedMediaType === 'image');
-  if (vidBtn) vidBtn.classList.toggle('active', selectedMediaType === 'video');
+// ===== POST TABS =====
+function switchPostTab(tab) {
+  ['texto','foto','video'].forEach(t => {
+    document.getElementById('post-panel-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  // Sync avatars
+  const mainAv = document.getElementById('feed-av');
+  ['foto','video'].forEach(t => {
+    const av = document.getElementById('feed-av-' + t);
+    if (av && mainAv) { av.innerHTML = mainAv.innerHTML; av.style.background = mainAv.style.background; }
+  });
 }
 
-function removeMedia() {
-  selectedMediaFile = null; selectedMediaType = null;
-  document.getElementById('media-preview').style.display = 'none';
-  document.getElementById('media-preview-content').innerHTML = '';
-  document.getElementById('media-input').value = '';
-  document.getElementById('img-btn')?.classList.remove('active');
-  document.getElementById('vid-btn')?.classList.remove('active');
+// ===== MEDIA UPLOAD =====
+const mediaFiles = {};
+
+function onMediaSelected(input, tab) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 100 * 1024 * 1024) { toast('Arquivo muito grande! Máximo 100MB', 'error'); return; }
+  mediaFiles[tab] = file;
+  const preview = document.getElementById(tab + '-preview');
+  const previewContent = document.getElementById(tab + '-preview-content');
+  const url = URL.createObjectURL(file);
+  const isVideo = file.type.startsWith('video/');
+  previewContent.innerHTML = isVideo
+    ? `<video src="${url}" controls style="width:100%;max-height:200px;border-radius:8px;background:#000;"></video>`
+    : `<img src="${url}" style="width:100%;max-height:240px;object-fit:cover;border-radius:8px;">`;
+  preview.style.display = 'block';
+  // Update select button
+  const selectBtn = document.getElementById(tab + '-select-btn');
+  if (selectBtn) { selectBtn.textContent = '✓ ' + file.name.slice(0,20); selectBtn.classList.add('active'); }
+}
+
+function removeMediaTab(tab) {
+  delete mediaFiles[tab];
+  document.getElementById(tab + '-preview').style.display = 'none';
+  document.getElementById(tab + '-preview-content').innerHTML = '';
+  document.getElementById(tab + '-input').value = '';
+  const selectBtn = document.getElementById(tab + '-select-btn');
+  if (selectBtn) { selectBtn.classList.remove('active'); selectBtn.textContent = tab === 'foto' ? '📷 Escolher foto' : '🎥 Escolher vídeo'; }
+}
+
+async function uploadMedia(file, tab) {
+  const ext = file.name.split('.').pop();
+  const path = currentUser.id + '/' + Date.now() + '.' + ext;
+  const { error } = await sb.storage.from('posts-media').upload(path, file);
+  if (error) throw error;
+  const { data } = sb.storage.from('posts-media').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+async function submitPostWithMedia(mediaType) {
+  const tab = mediaType === 'video' ? 'video' : 'foto';
+  const file = mediaFiles[tab];
+  if (!file) { toast('Selecione uma ' + (mediaType === 'video' ? 'vídeo' : 'foto') + ' primeiro!', 'error'); return; }
+  if (!currentUser) { toast('Faça login para publicar', 'error'); return; }
+  const captionEl = document.getElementById('post-content-' + tab);
+  const caption = captionEl ? captionEl.textContent.trim() : '';
+  toast('Enviando mídia...', 'success');
+  try {
+    const mediaUrl = await uploadMedia(file, tab);
+    const meta = currentUser.user_metadata || {};
+    const { error } = await sb.from('posts').insert({
+      user_id: currentUser.id,
+      content: caption,
+      author_meta: { nome: meta.full_name || meta.name || currentUser.email.split('@')[0], empresa: meta.empresa || '', setor: meta.setor || '' },
+      media_url: mediaUrl,
+      media_type: mediaType,
+      likes: 0
+    });
+    if (error) throw error;
+    if (captionEl) captionEl.textContent = '';
+    removeMediaTab(tab);
+    switchPostTab('texto');
+    toast('Publicado com sucesso! 🎉', 'success');
+    loadPosts();
+  } catch(e) { toast('Erro ao publicar: ' + e.message, 'error'); }
 }
 
 async function submitPost() {
@@ -1872,17 +1964,23 @@ let storyTimer = null;
 async function loadStories() {
   const bar = document.getElementById('stories-bar');
   if (!bar) return;
-  // Load recent posts with media as stories + users with stories
-  const { data } = await sb.from('posts')
-    .select('id, user_id, media_url, media_type, content, author_meta, created_at')
-    .not('media_url', 'is', null)
+
+  // Load active stories from stories table (not expired)
+  const { data } = await sb.from('stories')
+    .select('id, user_id, media_url, media_type, caption, author_meta, created_at, expires_at')
     .order('created_at', { ascending: false })
-    .limit(15);
+    .limit(20);
 
   stories = data || [];
+
+  // Keep add button
+  const addBtn = bar.querySelector('.story-item');
+  bar.innerHTML = '';
+  if (addBtn) bar.appendChild(addBtn);
+
   if (!stories.length) return;
 
-  // Group by user — latest story per user
+  // Group by user — show latest per user
   const seen = new Set();
   const uniqueStories = stories.filter(s => {
     if (seen.has(s.user_id)) return false;
@@ -1890,24 +1988,31 @@ async function loadStories() {
   });
 
   const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+  const isMyStory = (s) => s.user_id === currentUser?.id;
+
   const storyItems = uniqueStories.map((s, i) => {
     const nome = s.author_meta?.nome || 'Empresário';
     const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
     const color = colors[nome.charCodeAt(0) % colors.length];
+    const av = s.author_meta?.avatar_url
+      ? `<img src="${s.author_meta.avatar_url}">`
+      : `<div style="width:100%;height:100%;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0d0f14;">${initials}</div>`;
     const firstName = nome.split(' ')[0];
-    return `<div class="story-item" onclick="openStory(${i})">
-      <div class="story-ring">
-        <div class="story-av" style="background:${color};">${initials}</div>
+    const myLabel = isMyStory(s) ? 'Seu story' : firstName;
+    return `<div class="story-item" onclick="openStoryById('${s.id}')">
+      <div class="story-ring ${isMyStory(s) ? 'mine' : ''}">
+        <div class="story-av">${av}</div>
       </div>
-      <div class="story-name">${firstName}</div>
+      <div class="story-name">${myLabel}</div>
     </div>`;
   }).join('');
 
-  // Keep the "add story" button and append stories
-  const addBtn = bar.querySelector('.story-item');
-  bar.innerHTML = '';
-  if (addBtn) bar.appendChild(addBtn);
   bar.insertAdjacentHTML('beforeend', storyItems);
+}
+
+function openStoryById(storyId) {
+  const idx = stories.findIndex(s => s.id === storyId);
+  if (idx !== -1) openStory(idx);
 }
 
 function openStory(index) {
@@ -1939,7 +2044,7 @@ function openStory(index) {
         : `<img src="${s.media_url}" style="max-width:100%;max-height:100vh;object-fit:contain;">`
       }
     </div>
-    ${s.content ? `<div class="story-viewer-text">${s.content}</div>` : ''}
+    ${(s.caption||s.content) ? `<div class="story-viewer-text">${s.caption||s.content}</div>` : ''}
   `;
 
   // Tap left/right to navigate
@@ -1974,11 +2079,71 @@ function prevStory() {
   if (currentStoryIndex > 0) openStory(currentStoryIndex - 1);
 }
 
-function openAddStory() {
-  // Story is just a post with media — open media picker
-  const input = document.getElementById('media-input');
-  if (input) { input.accept = 'image/*,video/*'; input.click(); }
-  toast('Selecione uma imagem ou vídeo para o story', 'success');
+function openAddStoryModal() {
+  const existing = document.getElementById('story-add-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'story-add-modal';
+  modal.innerHTML = `
+    <div class="modal-box">
+      <button class="modal-close" onclick="document.getElementById('story-add-modal').remove()">×</button>
+      <div class="modal-title">Adicionar story</div>
+      <div class="modal-sub">Visível por 24 horas para toda a rede</div>
+      <input type="file" id="story-file-input" style="display:none;" accept="image/*,video/*" onchange="onStoryFileSelected(this)">
+      <div id="story-add-preview" style="display:none;margin-bottom:12px;border-radius:10px;overflow:hidden;max-height:300px;"></div>
+      <div class="form-group"><label class="form-label">Legenda (opcional)</label><input class="form-input" id="story-caption-input" placeholder="Ex: Reunião com parceiros hoje!"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="back-btn" onclick="document.getElementById('story-file-input').click()" style="flex:1;">📎 Escolher mídia</button>
+        <button class="auth-btn" style="flex:1;margin-top:0;" onclick="submitStory()">Publicar story</button>
+      </div>
+    </div>
+  `;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
+let storyFile = null;
+
+function onStoryFileSelected(input) {
+  storyFile = input.files[0];
+  if (!storyFile) return;
+  const url = URL.createObjectURL(storyFile);
+  const preview = document.getElementById('story-add-preview');
+  const isVideo = storyFile.type.startsWith('video/');
+  preview.innerHTML = isVideo
+    ? `<video src="${url}" controls style="width:100%;max-height:300px;object-fit:cover;"></video>`
+    : `<img src="${url}" style="width:100%;max-height:300px;object-fit:cover;">`;
+  preview.style.display = 'block';
+}
+
+async function submitStory() {
+  if (!storyFile) { toast('Selecione uma imagem ou vídeo!', 'error'); return; }
+  if (!currentUser) { toast('Faça login', 'error'); return; }
+  toast('Publicando story...', 'success');
+  try {
+    const ext = storyFile.name.split('.').pop();
+    const path = currentUser.id + '/story-' + Date.now() + '.' + ext;
+    const { error: upErr } = await sb.storage.from('posts-media').upload(path, storyFile);
+    if (upErr) throw upErr;
+    const { data } = sb.storage.from('posts-media').getPublicUrl(path);
+    const mediaUrl = data.publicUrl;
+    const mediaType = storyFile.type.startsWith('video/') ? 'video' : 'image';
+    const meta = currentUser.user_metadata || {};
+    const caption = document.getElementById('story-caption-input')?.value.trim() || '';
+    const { error } = await sb.from('stories').insert({
+      user_id: currentUser.id,
+      media_url: mediaUrl,
+      media_type: mediaType,
+      caption,
+      author_meta: { nome: meta.full_name || meta.name || currentUser.email.split('@')[0], empresa: meta.empresa || '', avatar_url: meta.avatar_url || '' }
+    });
+    if (error) throw error;
+    storyFile = null;
+    document.getElementById('story-add-modal')?.remove();
+    toast('Story publicado! ⭕', 'success');
+    loadStories();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
 }
 
 // ===== BUSCA GLOBAL =====
