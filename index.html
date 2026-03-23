@@ -1479,13 +1479,14 @@ const followersCount = followersRes.count || 0;
 const followingCount = followingRes.count || 0;
 
 // Feed stats
+try {
 const sp = document.getElementById('stat-posts'); if (sp) sp.textContent = postCount;
 const ss = document.getElementById('stat-seguidores'); if (ss) ss.textContent = followersCount;
 const sf = document.getElementById('stat-seguindo'); if (sf) sf.textContent = followingCount;
-// Profile stats
 const pp = document.getElementById('perfil-posts'); if (pp) pp.textContent = postCount;
 const ps = document.getElementById('perfil-seguidores'); if (ps) ps.textContent = followersCount;
 const pf = document.getElementById('perfil-seguindo'); if (pf) pf.textContent = followingCount;
+} catch(e) { console.error('stats error:', e); }
 }
 
 async function saveProfile() {
@@ -3252,12 +3253,11 @@ const { data: { session } } = await sb.auth.getSession();
 document.getElementById('loading-screen').style.opacity = '0';
 setTimeout(() => document.getElementById('loading-screen').style.display = 'none', 400);
 if (session) {
-await loadProfile(session.user);
+try { await loadProfile(session.user); } catch(e) { console.error('loadProfile error:', e); }
 showApp();
-loadPosts();
-loadRecentMembers();
-startRealtimeFeed();
-// Restore last visited page
+try { loadPosts(); } catch(e) {}
+try { loadRecentMembers(); } catch(e) {}
+try { startRealtimeFeed(); } catch(e) {}
 try {
 const lastPage = localStorage.getItem('nexo_last_page');
 if (lastPage && lastPage !== 'feed') goPage(lastPage);
@@ -3267,12 +3267,12 @@ showPage('login');
 }
 sb.auth.onAuthStateChange(async (event, session) => {
 if (event === 'SIGNED_IN' && session) {
-await loadProfile(session.user);
+try { await loadProfile(session.user); } catch(e) { console.error('loadProfile error:', e); }
 showApp();
-loadPosts();
-loadRecentMembers();
-startRealtimeFeed();
-loadMyFollowing();
+try { loadPosts(); } catch(e) {}
+try { loadRecentMembers(); } catch(e) {}
+try { startRealtimeFeed(); } catch(e) {}
+try { loadMyFollowing(); } catch(e) {}
 // Sync profile on login
 const meta = session.user.user_metadata || {};
 await sb.from('profiles').upsert({
