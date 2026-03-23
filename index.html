@@ -1478,24 +1478,23 @@ const el = document.getElementById(id);
 if (el) { el.textContent = initials; el.style.background = ''; }
 });
 }
-document.getElementById('sidebar-name').textContent = nome;
+const sName = document.getElementById('sidebar-name'); if (sName) sName.textContent = nome;
 updateBnAvatar();
-document.getElementById('sidebar-role').textContent = empresa || setor || 'Empresário';
+const sRole = document.getElementById('sidebar-role'); if (sRole) sRole.textContent = empresa || setor || 'Empresário';
 
 // Feed avatar
 
 // Perfil page
-
-document.getElementById('perfil-nome').textContent = nome;
-document.getElementById('perfil-email').textContent = user.email;
-document.getElementById('perfil-membro').textContent = memberDate;
+const pNome = document.getElementById('perfil-nome'); if (pNome) pNome.textContent = nome;
+const pEmail = document.getElementById('perfil-email'); if (pEmail) pEmail.textContent = user.email;
+const pMembro = document.getElementById('perfil-membro'); if (pMembro) pMembro.textContent = memberDate;
 
 // Edit fields
-document.getElementById('edit-nome').value = nome;
-document.getElementById('edit-empresa').value = empresa;
-document.getElementById('edit-cidade').value = cidade;
-document.getElementById('edit-bio').value = bio;
-if (setor) document.getElementById('edit-setor').value = setor;
+const eNome = document.getElementById('edit-nome'); if (eNome) eNome.value = nome;
+const eEmpresa = document.getElementById('edit-empresa'); if (eEmpresa) eEmpresa.value = empresa;
+const eCidade = document.getElementById('edit-cidade'); if (eCidade) eCidade.value = cidade;
+const eBio = document.getElementById('edit-bio'); if (eBio) eBio.value = bio;
+const eSetor = document.getElementById('edit-setor'); if (eSetor && setor) eSetor.value = setor;
 
 // Load posts + follower counts in parallel
 checkAdmin();
