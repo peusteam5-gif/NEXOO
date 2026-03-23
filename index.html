@@ -1527,88 +1527,94 @@ async function openPublicProfile(userId) {
   viewingUserId = userId;
   goPage('pub-perfil');
   const col = document.getElementById('pub-perfil-col');
-  col.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">Carregando perfil...</div>';
+  if (!col) return;
+  col.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">Carregando...</div>';
 
-  // Load profile, posts, follow status in parallel
-  const [profileRes, postsRes, followRes, followersRes, followingRes] = await Promise.all([
-    sb.from('profiles').select('*').eq('id', userId).maybeSingle(),
-    sb.from('posts').select('*').eq('user_id', userId).order('created_at', {ascending: false}).limit(10),
-    sb.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', userId).limit(1),
-    sb.from('follows').select('id', {count:'exact',head:true}).eq('following_id', userId),
-    sb.from('follows').select('id', {count:'exact',head:true}).eq('follower_id', userId)
-  ]);
+  try {
+    // Load everything separately to catch individual errors
+    const profileRes = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
+    const postsRes = await sb.from('posts').select('*').eq('user_id', userId).order('created_at', {ascending:false}).limit(10);
+    const followersRes = await sb.from('follows').select('id', {count:'exact',head:true}).eq('following_id', userId);
+    const followingRes = await sb.from('follows').select('id', {count:'exact',head:true}).eq('follower_id', userId);
+    const myFollowRes = await sb.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', userId).limit(1);
 
-  const posts = postsRes.data || [];
-  const isFollowing = !!(followRes.data && followRes.data.length > 0);
-  const followersCount = followersRes.count || 0;
-  const followingCount = followingRes.count || 0;
+    const p = profileRes.data || {};
+    const posts = postsRes.data || [];
+    const postMeta = posts[0]?.author_meta || {};
+    const isFollowing = !!(myFollowRes.data && myFollowRes.data.length > 0);
+    const followersCount = followersRes.count || 0;
+    const followingCount = followingRes.count || 0;
 
-  // Merge profile data with post author_meta as fallback
-  const profileData = profileRes.data || {};
-  const postMeta = posts[0]?.author_meta || {};
-  const p = {
-    nome: profileData.nome || postMeta.nome || null,
-    empresa: profileData.empresa || postMeta.empresa || null,
-    setor: profileData.setor || postMeta.setor || null,
-    cidade: profileData.cidade || null,
-    bio: profileData.bio || null,
-    avatar_url: profileData.avatar_url || null,
-    email: profileData.email || null,
-  };
+    const nome = p.nome || postMeta.nome || 'Empresário';
+    const empresa = p.empresa || postMeta.empresa || '';
+    const setor = p.setor || postMeta.setor || '';
+    const cidade = p.cidade || '';
+    const bio = p.bio || '';
+    const avatarUrl = p.avatar_url || '';
 
-  const nome = p.nome || 'Empresário';
-  const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
-  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
-  const color = colors[nome.charCodeAt(0) % colors.length];
-  const av = p.avatar_url
-    ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-    : initials;
+    const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+    const color = colors[nome.charCodeAt(0) % colors.length];
+    const av = avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : initials;
 
-  col.innerHTML = `
-    <div class="pub-cover-card">
-      <div class="pub-cover"><div class="pub-cover-grid"></div>
-        <div class="pub-av-wrap"><div class="pub-av" style="background:${color};">${av}</div></div>
-      </div>
-      <div class="pub-info">
-        <div class="pub-name-row">
-          <div class="pub-name">${nome}</div>
-          <div class="pub-actions">
-            <button class="msg-btn-pub" onclick="startDirectMessage('${userId}','${nome.replace(/'/g,'')}','${(p.empresa||'').replace(/'/g,'')}');goPage('msgs');">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>
-              Mensagem
-            </button>
-            <button class="follow-btn ${isFollowing?'following':''}" id="follow-btn-${userId}" onclick="toggleFollow('${userId}')">
-              ${isFollowing ? '✓ Seguindo' : '+ Seguir'}
-            </button>
+    if (isFollowing) myFollowing.add(userId);
+
+    col.innerHTML = `
+      <div class="pub-cover-card">
+        <div class="pub-cover">
+          <div class="pub-cover-grid"></div>
+          <div class="pub-av-wrap">
+            <div class="pub-av" style="background:${color};">${av}</div>
           </div>
         </div>
-        <div class="pub-headline">${p.empresa ? p.empresa + (p.setor ? ' · ' + p.setor : '') : (p.setor || 'Empresário na Nexo')}</div>
-        ${p.cidade ? `<div class="pub-loc"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1a3.5 3.5 0 0 1 3.5 3.5C9.5 7.5 6 11 6 11S2.5 7.5 2.5 4.5A3.5 3.5 0 0 1 6 1z"/><circle cx="6" cy="4.5" r="1"/></svg>${p.cidade}</div>` : ''}
-        ${p.setor ? `<div class="pub-tags"><span class="tag accent">${p.setor}</span></div>` : ''}
-        <div class="pub-stats">
-          <div class="pub-stat"><div class="pub-stat-val">${posts.length}</div><div class="pub-stat-label">posts</div></div>
-          <div class="pub-stat"><div class="pub-stat-val" id="pub-followers-${userId}">${followersCount}</div><div class="pub-stat-label">seguidores</div></div>
-          <div class="pub-stat"><div class="pub-stat-val">${followingCount}</div><div class="pub-stat-label">seguindo</div></div>
+        <div class="pub-info">
+          <div class="pub-name-row">
+            <div class="pub-name">${nome}</div>
+            <div class="pub-actions">
+              <button class="msg-btn-pub" onclick="startDirectMessage('${userId}','${nome.replace(/'/g,'')}','${empresa.replace(/'/g,'')}');goPage('msgs');">
+                💬 Mensagem
+              </button>
+              <button class="follow-btn ${isFollowing?'following':''}" id="follow-btn-${userId}" onclick="toggleFollow('${userId}')">
+                ${isFollowing ? '✓ Seguindo' : '+ Seguir'}
+              </button>
+            </div>
+          </div>
+          <div class="pub-headline">${empresa ? empresa + (setor ? ' · ' + setor : '') : setor || 'Membro da Nexo'}</div>
+          ${cidade ? `<div class="pub-loc">📍 ${cidade}</div>` : ''}
+          ${setor ? `<div class="pub-tags"><span class="tag accent">${setor}</span></div>` : ''}
+          <div class="pub-stats">
+            <div class="pub-stat"><div class="pub-stat-val">${posts.length}</div><div class="pub-stat-label">posts</div></div>
+            <div class="pub-stat"><div class="pub-stat-val" id="pub-followers-${userId}">${followersCount}</div><div class="pub-stat-label">seguidores</div></div>
+            <div class="pub-stat"><div class="pub-stat-val">${followingCount}</div><div class="pub-stat-label">seguindo</div></div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="pub-section"><div class="pub-section-title">Sobre</div><div class="pub-bio">${p.bio || 'Este empresário ainda não adicionou uma bio. Envie uma mensagem para se conectar!'}</div></div>
-    ${posts.length > 0 ? `
-    <div class="pub-section">
-      <div class="pub-section-title">Publicações (${posts.length})</div>
-      ${posts.map(post => `
-        <div class="pub-post">
-          <div class="pub-post-text">${post.content.length > 120 ? post.content.slice(0,120)+'...' : post.content}</div>
-          <div class="pub-post-meta">
-            <span>${timeAgo(post.created_at)}</span>
-            <span>❤️ ${post.likes||0}</span>
-          </div>
-        </div>`).join('')}
-    </div>` : '<div class="pub-section"><div style="text-align:center;color:var(--muted);font-size:13px;padding:16px 0;">Nenhuma publicação ainda</div></div>'}
-  `;
 
-  if (isFollowing) myFollowing.add(userId);
+      <div class="pub-section">
+        <div class="pub-section-title">Sobre</div>
+        <div class="pub-bio">${bio || 'Este empresário ainda não adicionou uma bio.'}</div>
+      </div>
+
+      <div class="pub-section">
+        <div class="pub-section-title">Publicações (${posts.length})</div>
+        ${posts.length === 0
+          ? '<div style="text-align:center;color:var(--muted);font-size:13px;padding:16px 0;">Nenhuma publicação ainda</div>'
+          : posts.map(post => `
+            <div class="pub-post">
+              <div class="pub-post-text">${post.content.length > 120 ? post.content.slice(0,120)+'...' : post.content}</div>
+              <div class="pub-post-meta">
+                <span>${timeAgo(post.created_at)}</span>
+                <span>❤️ ${post.likes||0}</span>
+              </div>
+            </div>`).join('')
+        }
+      </div>
+    `;
+  } catch(err) {
+    col.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">Erro ao carregar perfil. Tente novamente.</div>';
+  }
 }
+
 
 async function toggleFollow(userId) {
   const btn = document.getElementById('follow-btn-' + userId);
@@ -1734,6 +1740,10 @@ function goPage(p) {
   if (backBtn) backBtn.style.display = p === 'pub-perfil' ? 'flex' : 'none';
   // Sync bottom nav
   setBottomNav(p);
+  // Save current page (except pub-perfil — needs userId context)
+  if (p !== 'pub-perfil') {
+    try { localStorage.setItem('nexo_last_page', p); } catch(e) {}
+  }
 }
 
 function setTab(el) {
@@ -2115,6 +2125,11 @@ async function init() {
     loadPosts();
     loadRecentMembers();
     startRealtimeFeed();
+    // Restore last visited page
+    try {
+      const lastPage = localStorage.getItem('nexo_last_page');
+      if (lastPage && lastPage !== 'feed') goPage(lastPage);
+    } catch(e) {}
   } else {
     showPage('login');
   }
