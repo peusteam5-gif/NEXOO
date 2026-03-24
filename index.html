@@ -1324,6 +1324,9 @@ Voltar
           <div class="insta-tab" id="insta-tab-fotos" onclick="switchProfileTab('fotos')">
             <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="16" height="16" rx="2"/><path d="M1 12l4-4 3 3 3-3 6 6"/><circle cx="13" cy="6" r="1.5"/></svg>
           </div>
+          <div class="insta-tab" id="insta-tab-salvos" onclick="switchProfileTab('salvos')">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h12v15l-6-4-6 4V2z"/></svg>
+          </div>
         </div>
 
         <!-- GRID CONTENT -->
@@ -1748,18 +1751,20 @@ await loadProfile(user);
 
 // ===== POSTS =====
 let myLikes = new Set();
+let mySaved = new Set();
 
 async function loadPosts() {
 const container = document.getElementById('posts-container');
 
-// Load posts and likes in parallel
-const [postsResult, likesResult] = await Promise.all([
+// Load posts, likes and saved in parallel
+const [postsResult, likesResult, savedResult] = await Promise.all([
 sb.from('posts').select('*').order('created_at', { ascending: false }).limit(20),
-currentUser ? sb.from('likes').select('post_id').eq('user_id', currentUser.id) : Promise.resolve({ data: [] })
+currentUser ? sb.from('likes').select('post_id').eq('user_id', currentUser.id) : Promise.resolve({ data: [] }),
+currentUser ? sb.from('saved_posts').select('post_id').eq('user_id', currentUser.id) : Promise.resolve({ data: [] })
 ]);
 
-// Update myLikes Set with fresh data from DB
 myLikes = new Set((likesResult.data || []).map(l => l.post_id));
+mySaved = new Set((savedResult.data || []).map(s => s.post_id));
 
 if (postsResult.error) {
 container.innerHTML = '<div class="empty-feed"><div class="e-icon">✍️</div><div class="e-title">Nenhum post ainda</div><div class="e-sub">Seja o primeiro a publicar!</div></div>';
@@ -1807,7 +1812,10 @@ ${p.media_type === 'video'
 <div class="post-footer">
 <button class="post-btn ${myLikes.has(p.id)?'liked':''}" onclick="toggleLike(this,'${p.id}')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12s-5-3.5-5-7a3.5 3.5 0 0 1 6-2.4A3.5 3.5 0 0 1 12 5c0 3.5-5 7-5 7z"/></svg><span class="like-count">${p.likes||0}</span></button>
 <button class="post-btn" onclick="toggleComments('${p.id}',this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg><span class="comment-count">0</span></button>
-${isMe ? `<button class="post-btn" style="margin-left:auto;color:var(--red);" onclick="deletePost('${p.id}',this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h10M5 4V2h4v2M6 7v4M8 7v4M3 4l1 8h6l1-8"/></svg>Excluir</button>` : `<button class="post-btn" style="margin-left:auto;" onclick="startDirectMessage('${p.user_id}','${(p.author_meta?.nome||'Empresário').replace(/'/g,'')}','${(p.author_meta?.empresa||'').replace(/'/g,'')}')" ><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg>Mensagem</button>`}
+<button class="post-btn ${mySaved.has(p.id)?'saved':''}" onclick="toggleSave(this,'${p.id}')" title="${mySaved.has(p.id)?'Remover dos salvos':'Salvar post'}" style="margin-left:auto;">
+<svg width="14" height="14" viewBox="0 0 14 14" fill="${mySaved.has(p.id)?'var(--accent)':'none'}" stroke="currentColor" stroke-width="1.5"><path d="M2 1h10v12l-5-3-5 3V1z"/></svg>
+</button>
+${isMe ? `<button class="post-btn" style="color:var(--red);" onclick="deletePost('${p.id}',this)"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h10M5 4V2h4v2M6 7v4M8 7v4M3 4l1 8h6l1-8"/></svg></button>` : `<button class="post-btn" onclick="startDirectMessage('${p.user_id}','${(p.author_meta?.nome||'Empresário').replace(/'/g,'')}','${(p.author_meta?.empresa||'').replace(/'/g,'')}')" ><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h12v8H8l-3 3V9H1z"/></svg></button>`}
 </div>
 <div class="comments-section" id="comments-${p.id}" style="display:none;">
 <div class="comments-list" id="comments-list-${p.id}"></div>
@@ -3270,6 +3278,58 @@ bnAv.textContent = initials;
 }
 
 
+// ===== SALVAR POSTS =====
+async function toggleSave(btn, postId) {
+  if (!currentUser) { toast('Faça login para salvar', 'error'); return; }
+  if (btn.dataset.loading) return;
+  btn.dataset.loading = '1';
+  const isSaved = mySaved.has(postId);
+  const svg = btn.querySelector('svg');
+
+  if (isSaved) {
+    await sb.from('saved_posts').delete().eq('user_id', currentUser.id).eq('post_id', postId);
+    mySaved.delete(postId);
+    btn.classList.remove('saved');
+    if (svg) svg.setAttribute('fill', 'none');
+    toast('Post removido dos salvos', 'success');
+  } else {
+    const { error } = await sb.from('saved_posts').insert({ user_id: currentUser.id, post_id: postId });
+    if (!error) {
+      mySaved.add(postId);
+      btn.classList.add('saved');
+      if (svg) svg.setAttribute('fill', 'var(--accent)');
+      toast('Post salvo! 🔖', 'success');
+    }
+  }
+  delete btn.dataset.loading;
+}
+
+async function loadSavedPosts() {
+  const container = document.getElementById('insta-grid-content');
+  if (!container) return;
+  container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">Carregando salvos...</div>';
+  const { data: saved } = await sb.from('saved_posts')
+    .select('post_id, posts(*)')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+  
+  const posts = (saved || []).map(s => s.posts).filter(Boolean);
+  
+  if (!posts.length) {
+    container.innerHTML = '<div class="insta-empty-grid"><div class="insta-empty-icon">🔖</div><div class="insta-empty-title">Nenhum post salvo</div><p style="font-size:13px;color:var(--muted);">Toque no 🔖 em qualquer post para salvar!</p></div>';
+    return;
+  }
+  container.innerHTML = '<div class="insta-grid">' + posts.map(p => {
+    if (p.media_url && p.media_type === 'image') {
+      return `<div class="insta-grid-item" onclick="openLightbox('${p.media_url}')"><img src="${p.media_url}" loading="lazy"><div class="insta-grid-overlay"><div class="insta-grid-stat">❤️ ${p.likes||0}</div></div></div>`;
+    } else if (p.media_url && p.media_type === 'video') {
+      return `<div class="insta-grid-item"><video src="${p.media_url}" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video><div class="insta-grid-overlay"><div class="insta-grid-stat">▶</div></div></div>`;
+    } else {
+      return `<div class="insta-grid-text" onclick="openPublicProfile('${p.user_id}')"><div class="insta-grid-text-content">${p.content}</div><div class="insta-grid-overlay"><div class="insta-grid-stat">❤️ ${p.likes||0}</div></div></div>`;
+    }
+  }).join('') + '</div>';
+}
+
 // ===== PERFIL INSTAGRAM =====
 let currentProfileTab = 'posts';
 
@@ -3393,6 +3453,9 @@ async function switchProfileTab(tab) {
         </div>
       </div>`).join('') + '</div>';
 
+  } else if (tab === 'salvos') {
+    await loadSavedPosts();
+    return;
   } else if (tab === 'reels') {
     const { data } = await sb.from('posts').select('*').eq('user_id', currentUser.id).eq('media_type','video').order('created_at', {ascending:false});
     if (!data || !data.length) {
