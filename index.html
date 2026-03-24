@@ -763,6 +763,39 @@ overflow: hidden; animation: fadeUp 0.2s ease both;
 .edit-av-preview { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 24px; font-weight: 700; color: #0d0f14; cursor: pointer; }
 .edit-av-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .edit-av-label { font-size: 13px; color: var(--accent); cursor: pointer; font-weight: 500; }
+
+/* ===== EXPLORAR ===== */
+#page-explorar { flex-direction: column; }
+.explorar-wrap { flex: 1; overflow-y: auto; }
+.explorar-search { padding: 12px 16px; position: sticky; top: 0; background: var(--bg); z-index: 10; border-bottom: 0.5px solid var(--border); }
+.explorar-search-inner { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
+.explorar-search-inner input { background: none; border: none; outline: none; color: var(--text); font-family: var(--font-body); font-size: 14px; flex: 1; }
+.explorar-search-inner input::placeholder { color: var(--muted); }
+.explorar-filters { display: flex; gap: 8px; padding: 12px 16px 8px; overflow-x: auto; scrollbar-width: none; }
+.explorar-filters::-webkit-scrollbar { display: none; }
+.explorar-filter { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); color: var(--muted); background: none; transition: all 0.15s; white-space: nowrap; font-family: var(--font-body); }
+.explorar-filter.active { background: var(--accent); color: #0d0f14; border-color: var(--accent); font-weight: 600; }
+.explorar-section { padding: 12px 16px 4px; }
+.explorar-section-title { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
+.explorar-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-bottom: 20px; }
+.explorar-grid-item { aspect-ratio: 1; background: var(--surface2); overflow: hidden; cursor: pointer; position: relative; }
+.explorar-grid-item.big { grid-column: span 2; grid-row: span 2; }
+.explorar-grid-item img, .explorar-grid-item video { width: 100%; height: 100%; object-fit: cover; }
+.explorar-grid-item:hover .explorar-overlay { opacity: 1; }
+.explorar-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.15s; display: flex; align-items: center; justify-content: center; gap: 16px; }
+.explorar-overlay-stat { display: flex; align-items: center; gap: 4px; color: #fff; font-size: 13px; font-weight: 600; }
+.explorar-text-item { aspect-ratio: 1; background: var(--surface); border: 0.5px solid var(--border); overflow: hidden; cursor: pointer; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+.explorar-text-content { font-size: 11px; color: #c8c5be; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; flex: 1; }
+.explorar-text-author { font-size: 10px; color: var(--muted); margin-top: 6px; }
+.explorar-people { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+.explorar-people::-webkit-scrollbar { display: none; }
+.explorar-person { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; width: 80px; cursor: pointer; }
+.explorar-person-av { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 18px; font-weight: 700; color: #0d0f14; overflow: hidden; border: 2px solid var(--border2); }
+.explorar-person-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.explorar-person-name { font-size: 11px; color: var(--text); text-align: center; font-weight: 500; max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.explorar-person-role { font-size: 10px; color: var(--muted); text-align: center; max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.explorar-follow-pill { font-size: 10px; padding: 3px 10px; border-radius: 12px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(200,240,96,0.2); cursor: pointer; font-weight: 500; font-family: var(--font-body); }
+.explorar-empty { padding: 40px; text-align: center; color: var(--muted); font-size: 14px; }
 </style>
 </head>
 <body>
@@ -1165,6 +1198,34 @@ Voltar
 </div>
 </div>
 
+<div id="page-explorar" class="page">
+  <div class="explorar-wrap">
+    <!-- Search bar -->
+    <div class="explorar-search">
+      <div class="explorar-search-inner">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M11 11l3 3"/></svg>
+        <input id="explorar-input" placeholder="Buscar pessoas, empresas, setores..." oninput="onExplorarSearch(this.value)">
+      </div>
+    </div>
+    <!-- Filters -->
+    <div class="explorar-filters" id="explorar-filters">
+      <button class="explorar-filter active" onclick="setExplorarFilter('tudo',this)">✨ Tudo</button>
+      <button class="explorar-filter" onclick="setExplorarFilter('Tecnologia',this)">💻 Tecnologia</button>
+      <button class="explorar-filter" onclick="setExplorarFilter('Varejo',this)">🛍️ Varejo</button>
+      <button class="explorar-filter" onclick="setExplorarFilter('Alimentação',this)">🍕 Alimentação</button>
+      <button class="explorar-filter" onclick="setExplorarFilter('Beleza & Estética',this)">💄 Beleza</button>
+      <button class="explorar-filter" onclick="setExplorarFilter('Saúde',this)">🏥 Saúde</button>
+      <button class="explorar-filter" onclick="setExplorarFilter('Construção Civil',this)">🏗️ Construção</button>
+      <button class="explorar-filter" onclick="setExplorarFilter('Educação',this)">📚 Educação</button>
+      <button class="explorar-filter" onclick="setExplorarFilter('Agronegócio',this)">🌾 Agro</button>
+    </div>
+    <!-- Content -->
+    <div id="explorar-content">
+      <div class="explorar-empty">Carregando...</div>
+    </div>
+  </div>
+</div>
+
 <div id="page-busca" class="page">
 <div class="busca-wrap">
 <div class="busca-input-wrap">
@@ -1307,9 +1368,9 @@ Voltar
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
       Feed
     </div>
-    <div class="bn-item" id="bn-reels" onclick="goPage('reels');setBottomNav('reels')">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5l6 3-6 3V5z"/></svg>
-      Reels
+    <div class="bn-item" id="bn-explorar" onclick="goPage('explorar');setBottomNav('explorar')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M11 11l3 3"/></svg>
+      Explorar
     </div>
     <div class="bn-item plus-item" onclick="openPublishModal()">
       <div class="bn-plus">
@@ -3407,6 +3468,102 @@ async function uploadAvatarEdit(input) {
   toast('Foto atualizada! ✅', 'success');
 }
 
+
+// ===== EXPLORAR =====
+let explorarFilter = 'tudo';
+let explorarSearchTimer = null;
+
+function setExplorarFilter(filter, btn) {
+  explorarFilter = filter;
+  document.querySelectorAll('.explorar-filter').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  loadExplorar();
+}
+
+function onExplorarSearch(val) {
+  clearTimeout(explorarSearchTimer);
+  explorarSearchTimer = setTimeout(() => loadExplorar(val), 350);
+}
+
+async function loadExplorar(search = '') {
+  const container = document.getElementById('explorar-content');
+  if (!container) return;
+  container.innerHTML = '<div class="explorar-empty">Carregando...</div>';
+
+  const colors = ['linear-gradient(135deg,#4af0b0,#c8f060)','linear-gradient(135deg,#f0c040,#ff8c40)','linear-gradient(135deg,#7c6af0,#4af0b0)','linear-gradient(135deg,#f06060,#f0c040)'];
+
+  // Build queries based on filter and search
+  let postsQuery = sb.from('posts').select('*').order('likes', {ascending: false}).limit(18);
+  let peopleQuery = sb.from('profiles').select('*').neq('id', currentUser?.id || '').limit(10);
+
+  if (search) {
+    postsQuery = postsQuery.ilike('content', '%' + search + '%');
+    peopleQuery = peopleQuery.or('nome.ilike.%' + search + '%,empresa.ilike.%' + search + '%,setor.ilike.%' + search + '%');
+  } else if (explorarFilter !== 'tudo') {
+    postsQuery = postsQuery.contains('author_meta', {setor: explorarFilter});
+    peopleQuery = peopleQuery.eq('setor', explorarFilter);
+  }
+
+  const [postsRes, peopleRes] = await Promise.all([postsQuery, peopleQuery]);
+  const posts = postsRes.data || [];
+  const people = (peopleRes.data || []).filter(p => p.nome);
+
+  let html = '';
+
+  // People section
+  if (people.length > 0) {
+    html += '<div class="explorar-section"><div class="explorar-section-title">Pessoas para seguir</div>';
+    html += '<div class="explorar-people">';
+    html += people.map(u => {
+      const nome = u.nome || 'Empresário';
+      const initials = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      const color = colors[nome.charCodeAt(0) % colors.length];
+      const av = u.avatar_url ? '<img src="' + u.avatar_url + '">' : initials;
+      const isFollowing = myFollowing.has(u.id);
+      return '<div class="explorar-person" onclick="openPublicProfile('' + u.id + '''  + ')">' +
+        '<div class="explorar-person-av" style="background:' + color + ';">' + av + '</div>' +
+        '<div class="explorar-person-name">' + nome.split(' ')[0] + '</div>' +
+        '<div class="explorar-person-role">' + (u.setor || u.empresa || '') + '</div>' +
+        '<button class="explorar-follow-pill" onclick="event.stopPropagation();toggleFollow('' + u.id + '')">' + (isFollowing ? '✓' : '+ Seguir') + '</button>' +
+        '</div>';
+    }).join('');
+    html += '</div></div>';
+  }
+
+  // Posts grid
+  if (posts.length > 0) {
+    html += '<div class="explorar-section"><div class="explorar-section-title">Em alta</div>';
+    html += '<div class="explorar-grid">';
+    posts.forEach((p, i) => {
+      if (p.media_url && p.media_type === 'image') {
+        const isBig = i === 0;
+        html += '<div class="explorar-grid-item' + (isBig ? ' big' : '') + '" onclick="openLightbox('' + p.media_url + '')">' +
+          '<img src="' + p.media_url + '" loading="lazy">' +
+          '<div class="explorar-overlay"><div class="explorar-overlay-stat">❤️ ' + (p.likes||0) + '</div></div>' +
+          '</div>';
+      } else if (p.media_url && p.media_type === 'video') {
+        html += '<div class="explorar-grid-item" onclick="goPage('reels');setBottomNav('reels')">' +
+          '<video src="' + p.media_url + '" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>' +
+          '<div class="explorar-overlay"><div class="explorar-overlay-stat">▶ Reel</div></div>' +
+          '</div>';
+      } else {
+        const nome = p.author_meta?.nome || 'Empresário';
+        html += '<div class="explorar-text-item" onclick="openPublicProfile('' + p.user_id + '')">' +
+          '<div class="explorar-text-content">' + p.content + '</div>' +
+          '<div class="explorar-text-author">— ' + nome + ' · ❤️ ' + (p.likes||0) + '</div>' +
+          '</div>';
+      }
+    });
+    html += '</div></div>';
+  }
+
+  if (!html) {
+    html = '<div class="explorar-empty">😕 Nenhum resultado encontrado.<br>Tente outro filtro ou busca.</div>';
+  }
+
+  container.innerHTML = html;
+}
+
 // ===== MOBILE NAV =====
 function setBottomNav(page) {
 document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
@@ -3485,7 +3642,7 @@ console.log('Realtime feed status:', status);
 }
 
 // ===== NAVIGATION =====
-const pageTitles = { feed:'Feed de Negócios', reels:'Reels', grupos:'Grupos', opor:'Oportunidades', 'meu-perfil':'Perfil', msgs:'Mensagens', admin:'Painel Admin', 'pub-perfil':'Perfil', busca:'Buscar' };
+const pageTitles = { feed:'Feed de Negócios', reels:'Reels', explorar:'Explorar', grupos:'Grupos', opor:'Oportunidades', 'meu-perfil':'Perfil', msgs:'Mensagens', admin:'Painel Admin', 'pub-perfil':'Perfil', busca:'Buscar' };
 
 function goPage(p) {
 document.querySelectorAll('.page').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
@@ -3500,6 +3657,7 @@ if (p === 'msgs' && currentUser) loadConversations();
 if (p === 'admin' && isAdmin) loadAdminData();
 if (p === 'busca') loadBuscaInicial();
 if (p === 'reels') loadReels();
+if (p === 'explorar') loadExplorar();
 if (p === 'meu-perfil' && currentUser) loadInstagramProfile();
 // Show/hide back button
 const backBtn = document.getElementById('topbar-back');
