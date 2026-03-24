@@ -2799,11 +2799,11 @@ async function loadNotifications() {
 
 async function loadUnreadCount() {
   if (!currentUser) return;
-  const { count } = await sb.from('notifications')
-    .select('*', { count: 'exact', head: true })
+  const { data } = await sb.from('notifications')
+    .select('id')
     .eq('user_id', currentUser.id)
     .eq('read', false);
-  updateNotifBadge(count || 0);
+  updateNotifBadge((data || []).length);
 }
 
 function updateNotifBadge(count) {
@@ -2980,12 +2980,8 @@ function startNotifPolling() {
         toast(icon + ' ' + n.message, 'success');
         playNotifSound();
       });
-      // Count all unread and update badge
-      const { count } = await sb.from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', currentUser.id)
-        .eq('read', false);
-      updateNotifBadge(count || 0);
+      // Update badge with new notifications count
+      updateNotifBadge(data.length);
     }
   }, 8000);
 }
