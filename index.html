@@ -679,6 +679,14 @@ overflow: hidden; animation: fadeUp 0.2s ease both;
 .notif-empty { padding:32px; text-align:center; color:var(--muted); font-size:13px; }
 .notif-overlay { position:fixed; inset:0; z-index:4999; }
 @media(max-width:900px) { .notif-sheet { top:52px; right:8px; left:8px; width:auto; } }
+
+/* SINO ANIMADO */
+@keyframes bellRing { 0%,100%{transform:rotate(0)} 10%{transform:rotate(15deg)} 20%{transform:rotate(-15deg)} 30%{transform:rotate(10deg)} 40%{transform:rotate(-10deg)} 50%{transform:rotate(5deg)} 60%{transform:rotate(-5deg)} }
+@keyframes bellPulse { 0%,100%{box-shadow:0 0 0 0 rgba(200,240,96,0.4)} 50%{box-shadow:0 0 0 8px rgba(200,240,96,0)} }
+.notif-btn.has-notif { background:rgba(200,240,96,0.15) !important; border-color:rgba(200,240,96,0.4) !important; color:var(--accent) !important; animation:bellPulse 2s ease infinite; }
+.notif-btn.has-notif svg { animation:bellRing 0.8s ease; color:var(--accent); stroke:var(--accent); }
+.mobile-icon-btn.has-notif { color:var(--accent) !important; }
+.mobile-icon-btn.has-notif svg { animation:bellRing 0.8s ease; stroke:var(--accent); }
 </style>
 </head>
 <body>
@@ -2805,6 +2813,23 @@ function updateNotifBadge(count) {
     el.textContent = count > 9 ? '9+' : count;
     el.style.display = count > 0 ? 'block' : 'none';
   });
+  // Animate bell buttons
+  const notifBtn = document.getElementById('notif-btn');
+  if (notifBtn) {
+    notifBtn.classList.toggle('has-notif', count > 0);
+    if (count > 0) {
+      // Re-trigger animation
+      notifBtn.querySelector('svg')?.style && (notifBtn.querySelector('svg').style.animation = 'none');
+      setTimeout(() => { if (notifBtn.querySelector('svg')) notifBtn.querySelector('svg').style.animation = ''; }, 10);
+    }
+  }
+  // Mobile bell
+  document.querySelectorAll('.mobile-icon-btn').forEach(btn => {
+    const svg = btn.querySelector('svg');
+    if (svg && svg.innerHTML.includes('M10 2a6')) {
+      btn.classList.toggle('has-notif', count > 0);
+    }
+  });
 }
 
 async function toggleNotifSheet() {
@@ -2835,6 +2860,9 @@ async function toggleNotifSheet() {
   renderNotifications(notifs);
   // Mark all as read after viewing
   setTimeout(() => markAllRead(), 2000);
+  // Clear bell animation
+  document.getElementById('notif-btn')?.classList.remove('has-notif');
+  document.querySelectorAll('.mobile-icon-btn.has-notif').forEach(b => b.classList.remove('has-notif'));
 }
 
 function renderNotifications(notifs) {
