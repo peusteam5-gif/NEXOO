@@ -1300,6 +1300,36 @@ Voltar
       </div>
     </div>
 
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <div class="bn-item active" id="bn-feed" onclick="goPage('feed');setBottomNav('feed')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+      Feed
+    </div>
+    <div class="bn-item" id="bn-reels" onclick="goPage('reels');setBottomNav('reels')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5l6 3-6 3V5z"/></svg>
+      Reels
+    </div>
+    <div class="bn-item plus-item" onclick="openPublishModal()">
+      <div class="bn-plus">
+        <svg viewBox="0 0 16 16" fill="none" stroke-width="2.5"><path d="M8 3v10M3 8h10" stroke="#0d0f14"/></svg>
+      </div>
+      Publicar
+    </div>
+    <div class="bn-item" id="bn-msgs" onclick="goPage('msgs');setBottomNav('msgs')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h14v10H9l-3 3V11H1z"/></svg>
+      <span class="bn-badge" id="bn-msgs-badge" style="display:none">0</span>
+      Msgs
+    </div>
+    <div class="bn-item" id="bn-meu-perfil" onclick="goPage('meu-perfil');setBottomNav('meu-perfil')">
+      <div id="bn-perfil-av" style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#4af0b0,#c8f060);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#0d0f14;overflow:hidden;">?</div>
+      Perfil
+    </div>
+  </div>
+</nav>
+</div>
+
 <div id="page-admin" class="page" style="display:none;">
 <div class="admin-content">
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
