@@ -2905,6 +2905,43 @@ function handleIncomingNotif(type, message) {
   }
 }
 
+// Polling fallback for notifications
+let lastNotifCheck = new Date().toISOString();
+let notifPollInterval = null;
+
+function startNotifPolling() {
+  if (notifPollInterval) clearInterval(notifPollInterval);
+  notifPollInterval = setInterval(async () => {
+    if (!currentUser) return;
+    const { data } = await sb.from('notifications')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .eq('read', false)
+      .gt('created_at', lastNotifCheck)
+      .order('created_at', { ascending: true });
+    if (data && data.length > 0) {
+      lastNotifCheck = data[data.length - 1].created_at;
+      data.forEach(n => {
+        const icons = { like: '❤️', comment: '💬', follow: '👤', message: '✉️' };
+        const icon = icons[n.type] || '🔔';
+        toast(icon + ' ' + n.message, 'success');
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
+          osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+          osc.start(); osc.stop(ctx.currentTime + 0.3);
+        } catch(e) {}
+      });
+      loadUnreadCount();
+    }
+  }, 8000); // Check every 8 seconds
+}
+
 function startRealtimeNotifications() {
   const myId = currentUser.id;
   sb.channel('notifs-pg-' + myId + '-' + Date.now())
@@ -3542,7 +3579,8 @@ try { loadPosts(); } catch(e) {}
 try { loadRecentMembers(); } catch(e) {}
 try { startRealtimeFeed(); } catch(e) {}
 try { loadMyFollowing(); } catch(e) {}
-try { startRealtimeNotifications(); loadUnreadCount(); } catch(e) {}
+lastNotifCheck = new Date().toISOString();
+try { startRealtimeNotifications(); startNotifPolling(); loadUnreadCount(); } catch(e) {}
 // Sync profile on login
 const meta = session.user.user_metadata || {};
 await sb.from('profiles').upsert({
