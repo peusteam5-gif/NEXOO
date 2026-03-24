@@ -687,6 +687,82 @@ overflow: hidden; animation: fadeUp 0.2s ease both;
 .notif-btn.has-notif svg { animation:bellRing 0.8s ease; color:var(--accent); stroke:var(--accent); }
 .mobile-icon-btn.has-notif { color:var(--accent) !important; }
 .mobile-icon-btn.has-notif svg { animation:bellRing 0.8s ease; stroke:var(--accent); }
+
+/* ===== PERFIL INSTAGRAM ===== */
+#page-meu-perfil { flex-direction: column; background: var(--bg); }
+.insta-profile { flex: 1; overflow-y: auto; max-width: 640px; width: 100%; margin: 0 auto; }
+
+/* Header */
+.insta-profile-header { padding: 20px 16px 0; }
+.insta-profile-top { display: flex; align-items: center; gap: 24px; margin-bottom: 16px; }
+.insta-av-wrap { position: relative; flex-shrink: 0; }
+.insta-av { width: 86px; height: 86px; border-radius: 50%; background: linear-gradient(135deg,#f0c040,#ff8c40); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 28px; font-weight: 700; color: #0d0f14; overflow: hidden; border: 3px solid var(--surface2); cursor: pointer; }
+.insta-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.insta-av-ring { position: absolute; inset: -3px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent2)); z-index: -1; }
+.insta-av-edit { position: absolute; bottom: 0; right: 0; width: 24px; height: 24px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid var(--bg); }
+.insta-stats { display: flex; gap: 0; flex: 1; justify-content: space-around; }
+.insta-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: background 0.15s; }
+.insta-stat:hover { background: var(--surface2); }
+.insta-stat-val { font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--text); }
+.insta-stat-label { font-size: 12px; color: var(--muted); }
+
+/* Bio */
+.insta-bio-section { padding: 0 16px 12px; }
+.insta-display-name { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.insta-headline { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.insta-bio { font-size: 13px; color: #c8c5be; line-height: 1.5; margin-bottom: 4px; white-space: pre-wrap; }
+.insta-link { font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 500; }
+.insta-link:hover { text-decoration: underline; }
+
+/* Buttons */
+.insta-actions { display: flex; gap: 8px; padding: 0 16px 16px; }
+.insta-btn { flex: 1; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: var(--font-body); cursor: pointer; transition: all 0.15s; border: 1px solid var(--border2); text-align: center; }
+.insta-btn.primary { background: var(--accent); color: #0d0f14; border-color: var(--accent); }
+.insta-btn.primary:hover { background: #d6f57a; }
+.insta-btn.secondary { background: var(--surface2); color: var(--text); }
+.insta-btn.secondary:hover { background: var(--surface); }
+.insta-btn.danger { background: none; color: var(--red); border-color: rgba(255,90,90,0.3); }
+.insta-btn.danger:hover { background: rgba(255,90,90,0.1); }
+
+/* Stories row */
+.insta-stories-row { display: flex; gap: 16px; padding: 8px 16px 16px; overflow-x: auto; scrollbar-width: none; border-bottom: 0.5px solid var(--border); }
+.insta-stories-row::-webkit-scrollbar { display: none; }
+.insta-story-thumb { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; cursor: pointer; }
+.insta-story-ring { width: 60px; height: 60px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+.insta-story-ring.empty { background: var(--surface2); border: 2px dashed var(--border2); }
+.insta-story-av { width: 100%; height: 100%; border-radius: 50%; background: var(--surface); overflow: hidden; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); font-size: 22px; }
+.insta-story-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.insta-story-label { font-size: 10px; color: var(--muted); max-width: 60px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Tabs */
+.insta-tabs { display: flex; border-bottom: 0.5px solid var(--border); }
+.insta-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; font-size: 12px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.insta-tab.active { color: var(--text); border-bottom-color: var(--text); }
+.insta-tab svg { width: 18px; height: 18px; }
+
+/* Grid */
+.insta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+.insta-grid-item { aspect-ratio: 1; background: var(--surface2); overflow: hidden; cursor: pointer; position: relative; }
+.insta-grid-item img, .insta-grid-item video { width: 100%; height: 100%; object-fit: cover; }
+.insta-grid-item:hover .insta-grid-overlay { opacity: 1; }
+.insta-grid-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.15s; display: flex; align-items: center; justify-content: center; gap: 16px; }
+.insta-grid-stat { display: flex; align-items: center; gap: 4px; color: #fff; font-size: 13px; font-weight: 600; }
+.insta-grid-text { aspect-ratio: 1; background: var(--surface); display: flex; align-items: flex-start; padding: 10px; overflow: hidden; cursor: pointer; position: relative; border: 0.5px solid var(--border); }
+.insta-grid-text-content { font-size: 11px; color: #c8c5be; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; }
+.insta-empty-grid { grid-column: 1/-1; padding: 48px 16px; text-align: center; color: var(--muted); }
+.insta-empty-icon { font-size: 40px; margin-bottom: 12px; }
+.insta-empty-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+
+/* Edit modal */
+.edit-profile-sheet { position: fixed; inset: 0; background: var(--bg); z-index: 6000; display: flex; flex-direction: column; animation: slideUp 0.25s ease both; overflow-y: auto; }
+.edit-profile-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 0.5px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 1; }
+.edit-profile-title { font-family: var(--font-head); font-size: 16px; font-weight: 700; }
+.edit-profile-save { background: var(--accent); color: #0d0f14; font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer; font-family: var(--font-head); }
+.edit-profile-body { padding: 20px 16px; display: flex; flex-direction: column; gap: 16px; max-width: 500px; width: 100%; margin: 0 auto; }
+.edit-av-center { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 8px; }
+.edit-av-preview { width: 80px; height: 80px; border-radius: 50%; overflow: hidden; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-size: 24px; font-weight: 700; color: #0d0f14; cursor: pointer; }
+.edit-av-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.edit-av-label { font-size: 13px; color: var(--accent); cursor: pointer; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -1118,87 +1194,111 @@ Voltar
 </div>
 </div>
 
-<div id="page-meu-perfil" class="page">
-<div class="meu-perfil-content">
-<div class="meu-perfil-col">
-<div class="cover-card">
-<div class="cover"><div class="cover-grid"></div><div class="cover-glow"></div>
-<div class="mp-av-wrap">
-<div class="av-upload-wrap" onclick="document.getElementById('av-input').click()">
-<div class="mp-av" id="perfil-av">?</div>
-<div class="av-upload-overlay">
-<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13l4-4 3 3 4-5 4 6H3z"/><circle cx="6" cy="7" r="1.5"/><rect x="1" y="1" width="18" height="18" rx="3"/></svg>
-</div>
-</div>
-<input type="file" id="av-input" class="av-upload-input" accept="image/*" onchange="uploadAvatar(this)">
-</div>
-</div>
-<div class="mp-info">
-<div class="mp-name" id="perfil-nome">...</div>
-<div class="mp-email" id="perfil-email">...</div>
-<div class="mp-stats">
-<div class="mp-stat"><div class="mp-stat-val" id="perfil-posts">0</div><div class="mp-stat-label">posts</div></div>
-<div class="mp-stat"><div class="mp-stat-val" id="perfil-seguidores">0</div><div class="mp-stat-label">seguidores</div></div>
-<div class="mp-stat"><div class="mp-stat-val" id="perfil-seguindo">0</div><div class="mp-stat-label">seguindo</div></div>
-</div>
-</div>
-</div>
-<div class="edit-card">
-<div class="edit-title">Editar perfil</div>
-<div class="edit-row">
-<div class="form-group"><label class="form-label">Nome completo</label><input class="form-input" id="edit-nome" placeholder="Seu nome"></div>
-<div class="form-group"><label class="form-label">Empresa</label><input class="form-input" id="edit-empresa" placeholder="Nome da empresa"></div>
-</div>
-<div class="edit-row">
-<div class="form-group"><label class="form-label">Setor</label>
-<select class="form-input" id="edit-setor">
-<option value="">Selecione...</option>
-<option>Varejo</option><option>Alimentação</option><option>Beleza & Estética</option>
-<option>Tecnologia</option><option>Logística</option><option>Serviços</option>
-<option>Construção Civil</option><option>Saúde</option><option>Educação</option><option>Agronegócio</option><option>Outro</option>
-</select>
-</div>
-<div class="form-group"><label class="form-label">Cidade</label><input class="form-input" id="edit-cidade" placeholder="São Paulo, SP"></div>
-</div>
-<div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="edit-bio" placeholder="Fale um pouco sobre você e sua empresa..." rows="3" style="resize:none;"></textarea></div>
-<button class="save-btn" id="save-profile-btn" onclick="saveProfile()">Salvar alterações</button>
-<button onclick="doLogout()" style="width:100%;padding:11px;border-radius:8px;background:none;border:1px solid rgba(255,90,90,0.3);color:var(--red);font-size:13px;font-family:var(--font-body);cursor:pointer;margin-top:10px;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,90,90,0.1)'" onmouseout="this.style.background='none'">🚪 Sair da conta</button>
-</div>
-</div>
-</div>
-</div>
+    <div id="page-meu-perfil" class="page">
+      <div class="insta-profile" id="insta-profile-wrap">
 
-</main>
-</div>
+        <!-- HEADER -->
+        <div class="insta-profile-header">
+          <div class="insta-profile-top">
+            <!-- Avatar -->
+            <div class="insta-av-wrap">
+              <div class="insta-av-ring"></div>
+              <div class="insta-av" id="insta-av" onclick="document.getElementById('av-input').click()">?</div>
+              <div class="insta-av-edit" onclick="document.getElementById('av-input').click()">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#0d0f14" stroke-width="1.5"><path d="M1 9l7-7 2 2-7 7H1V9z"/><path d="M8 2l2 2"/></svg>
+              </div>
+              <input type="file" id="av-input" style="display:none;" accept="image/*" onchange="uploadAvatar(this)">
+            </div>
+            <!-- Stats -->
+            <div class="insta-stats">
+              <div class="insta-stat">
+                <div class="insta-stat-val" id="insta-posts">0</div>
+                <div class="insta-stat-label">posts</div>
+              </div>
+              <div class="insta-stat">
+                <div class="insta-stat-val" id="insta-seguidores">0</div>
+                <div class="insta-stat-label">seguidores</div>
+              </div>
+              <div class="insta-stat">
+                <div class="insta-stat-val" id="insta-seguindo">0</div>
+                <div class="insta-stat-label">seguindo</div>
+              </div>
+            </div>
+          </div>
 
-<nav class="bottom-nav">
-<div class="bottom-nav-inner">
-<div class="bn-item active" id="bn-feed" onclick="goPage('feed');setBottomNav('feed')">
-<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
-Feed
-</div>
-<div class="bn-item" id="bn-reels" onclick="goPage('reels');setBottomNav('reels')">
-<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="2"/><path d="M5 5l6 3-6 3V5z"/></svg>
-Reels
-</div>
-<div class="bn-item plus-item" onclick="openPublishModal()">
-<div class="bn-plus">
-<svg viewBox="0 0 16 16" fill="none" stroke-width="2.5"><path d="M8 3v10M3 8h10" stroke="#0d0f14"/></svg>
-</div>
-Publicar
-</div>
-<div class="bn-item" id="bn-msgs" onclick="goPage('msgs');setBottomNav('msgs')">
-<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1h14v10H9l-3 3V11H1z"/></svg>
-<span class="bn-badge" id="bn-msgs-badge" style="display:none">0</span>
-Msgs
-</div>
-<div class="bn-item" id="bn-meu-perfil" onclick="goPage('meu-perfil');setBottomNav('meu-perfil')">
-<div id="bn-perfil-av" style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#4af0b0,#c8f060);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#0d0f14;overflow:hidden;">?</div>
-Perfil
-</div>
-</div>
-</nav>
-</div>
+          <!-- Bio -->
+          <div class="insta-bio-section">
+            <div class="insta-display-name" id="insta-nome">...</div>
+            <div class="insta-headline" id="insta-headline">...</div>
+            <div class="insta-bio" id="insta-bio"></div>
+            <a class="insta-link" id="insta-link" href="#" style="display:none;" target="_blank"></a>
+          </div>
+
+          <!-- Actions -->
+          <div class="insta-actions">
+            <button class="insta-btn primary" onclick="openEditProfileSheet()">✏️ Editar perfil</button>
+            <button class="insta-btn secondary" onclick="openAddStoryModal()">+ Story</button>
+            <button class="insta-btn danger" onclick="doLogout()">Sair</button>
+          </div>
+        </div>
+
+        <!-- STORIES DO USUÁRIO -->
+        <div class="insta-stories-row" id="my-stories-row">
+          <div class="insta-story-thumb" onclick="openAddStoryModal()">
+            <div class="insta-story-ring empty">
+              <div class="insta-story-av">+</div>
+            </div>
+            <div class="insta-story-label">Novo</div>
+          </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="insta-tabs">
+          <div class="insta-tab active" id="insta-tab-posts" onclick="switchProfileTab('posts')">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="7" height="7" rx="1"/><rect x="10" y="1" width="7" height="7" rx="1"/><rect x="1" y="10" width="7" height="7" rx="1"/><rect x="10" y="10" width="7" height="7" rx="1"/></svg>
+          </div>
+          <div class="insta-tab" id="insta-tab-reels" onclick="switchProfileTab('reels')">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="14" height="16" rx="2"/><path d="M6 6l6 3-6 3V6z"/></svg>
+          </div>
+          <div class="insta-tab" id="insta-tab-fotos" onclick="switchProfileTab('fotos')">
+            <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="16" height="16" rx="2"/><path d="M1 12l4-4 3 3 3-3 6 6"/><circle cx="13" cy="6" r="1.5"/></svg>
+          </div>
+        </div>
+
+        <!-- GRID CONTENT -->
+        <div id="insta-grid-content"></div>
+
+      </div>
+    </div>
+
+    <!-- EDIT PROFILE SHEET -->
+    <div id="edit-profile-sheet" style="display:none;" class="edit-profile-sheet">
+      <div class="edit-profile-header">
+        <button onclick="closeEditProfileSheet()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
+        <div class="edit-profile-title">Editar perfil</div>
+        <button class="edit-profile-save" onclick="saveProfileNew()">Salvar</button>
+      </div>
+      <div class="edit-profile-body">
+        <div class="edit-av-center">
+          <div class="edit-av-preview" id="edit-av-preview" onclick="document.getElementById('av-input-edit').click()">?</div>
+          <input type="file" id="av-input-edit" style="display:none;" accept="image/*" onchange="uploadAvatarEdit(this)">
+          <div class="edit-av-label" onclick="document.getElementById('av-input-edit').click()">Alterar foto</div>
+        </div>
+        <div class="form-group"><label class="form-label">Nome</label><input class="form-input" id="edit2-nome" placeholder="Seu nome"></div>
+        <div class="form-group"><label class="form-label">Empresa</label><input class="form-input" id="edit2-empresa" placeholder="Nome da empresa"></div>
+        <div class="form-group"><label class="form-label">Setor</label>
+          <select class="form-input" id="edit2-setor">
+            <option value="">Selecione...</option>
+            <option>Varejo</option><option>Alimentação</option><option>Beleza & Estética</option>
+            <option>Tecnologia</option><option>Logística</option><option>Serviços</option>
+            <option>Construção Civil</option><option>Saúde</option><option>Educação</option><option>Agronegócio</option><option>Outro</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Cidade</label><input class="form-input" id="edit2-cidade" placeholder="São Paulo, SP"></div>
+        <div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="edit2-bio" rows="3" placeholder="Fale sobre você e sua empresa..." style="resize:none;"></textarea></div>
+        <div class="form-group"><label class="form-label">Link (site, WhatsApp...)</label><input class="form-input" id="edit2-link" placeholder="https://..."></div>
+      </div>
+    </div>
 
 <div id="page-admin" class="page" style="display:none;">
 <div class="admin-content">
@@ -3078,6 +3178,205 @@ bnAv.textContent = initials;
 }
 }
 
+
+// ===== PERFIL INSTAGRAM =====
+let currentProfileTab = 'posts';
+
+async function loadInstagramProfile() {
+  if (!currentUser) return;
+  const meta = currentUser.user_metadata || {};
+  const nome = meta.full_name || meta.name || currentUser.email.split('@')[0];
+  const empresa = meta.empresa || '';
+  const setor = meta.setor || '';
+  const cidade = meta.cidade || '';
+  const bio = meta.bio || '';
+  const link = meta.link || '';
+  const avatarUrl = meta.avatar_url || '';
+
+  // Avatar
+  const av = document.getElementById('insta-av');
+  if (av) {
+    if (avatarUrl) {
+      av.innerHTML = '<img src="' + avatarUrl + '">';
+    } else {
+      av.textContent = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    }
+  }
+  // Edit sheet avatar preview
+  const editAv = document.getElementById('edit-av-preview');
+  if (editAv) {
+    if (avatarUrl) editAv.innerHTML = '<img src="' + avatarUrl + '">';
+    else editAv.textContent = nome.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  }
+
+  // Bio section
+  const nomeEl = document.getElementById('insta-nome'); if (nomeEl) nomeEl.textContent = nome;
+  const headline = empresa ? empresa + (setor ? ' · ' + setor : '') + (cidade ? ' · ' + cidade : '') : setor || 'Empresário na Nexo';
+  const headEl = document.getElementById('insta-headline'); if (headEl) headEl.textContent = headline;
+  const bioEl = document.getElementById('insta-bio'); if (bioEl) bioEl.textContent = bio;
+  const linkEl = document.getElementById('insta-link');
+  if (linkEl) {
+    if (link) { linkEl.href = link.startsWith('http') ? link : 'https://' + link; linkEl.textContent = link.replace('https://','').replace('http://',''); linkEl.style.display = 'block'; }
+    else linkEl.style.display = 'none';
+  }
+
+  // Edit form fields
+  const e2nome = document.getElementById('edit2-nome'); if (e2nome) e2nome.value = nome;
+  const e2emp = document.getElementById('edit2-empresa'); if (e2emp) e2emp.value = empresa;
+  const e2set = document.getElementById('edit2-setor'); if (e2set && setor) e2set.value = setor;
+  const e2cid = document.getElementById('edit2-cidade'); if (e2cid) e2cid.value = cidade;
+  const e2bio = document.getElementById('edit2-bio'); if (e2bio) e2bio.value = bio;
+  const e2link = document.getElementById('edit2-link'); if (e2link) e2link.value = link;
+
+  // Stats
+  const [postsRes, followersRes, followingRes] = await Promise.all([
+    sb.from('posts').select('id', {count:'exact',head:true}).eq('user_id', currentUser.id),
+    sb.from('follows').select('id', {count:'exact',head:true}).eq('following_id', currentUser.id),
+    sb.from('follows').select('id', {count:'exact',head:true}).eq('follower_id', currentUser.id)
+  ]);
+  const ip = document.getElementById('insta-posts'); if (ip) ip.textContent = postsRes.count || 0;
+  const is = document.getElementById('insta-seguidores'); if (is) is.textContent = followersRes.count || 0;
+  const ig = document.getElementById('insta-seguindo'); if (ig) ig.textContent = followingRes.count || 0;
+
+  // Load stories and grid
+  await loadMyStories();
+  await switchProfileTab(currentProfileTab);
+}
+
+async function loadMyStories() {
+  const row = document.getElementById('my-stories-row');
+  if (!row || !currentUser) return;
+  const { data } = await sb.from('stories').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false}).limit(8);
+  // Keep add button
+  const addBtn = row.querySelector('.insta-story-thumb');
+  row.innerHTML = '';
+  if (addBtn) row.appendChild(addBtn);
+  if (!data || !data.length) return;
+  data.forEach((s, i) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'insta-story-thumb';
+    const preview = s.media_type === 'video'
+      ? '<video src="' + s.media_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"></video>'
+      : '<img src="' + s.media_url + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    thumb.innerHTML = '<div class="insta-story-ring"><div class="insta-story-av">' + preview + '</div></div><div class="insta-story-label">' + timeAgo(s.created_at) + '</div>';
+    thumb.onclick = () => { stories = data; openStory(i); };
+    row.appendChild(thumb);
+  });
+}
+
+async function switchProfileTab(tab) {
+  currentProfileTab = tab;
+  ['posts','reels','fotos'].forEach(t => {
+    const el = document.getElementById('insta-tab-' + t);
+    if (el) el.classList.toggle('active', t === tab);
+  });
+  const container = document.getElementById('insta-grid-content');
+  if (!container) return;
+  container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted);">Carregando...</div>';
+
+  if (tab === 'posts') {
+    const { data } = await sb.from('posts').select('*').eq('user_id', currentUser.id).is('media_url', null).order('created_at', {ascending:false});
+    if (!data || !data.length) {
+      container.innerHTML = '<div class="insta-empty-grid"><div class="insta-empty-icon">✍️</div><div class="insta-empty-title">Nenhum post ainda</div><p style="font-size:13px;color:var(--muted);">Compartilhe algo com sua rede!</p></div>';
+      return;
+    }
+    container.innerHTML = '<div class="insta-grid">' + data.map(p => `
+      <div class="insta-grid-text" onclick="goPage('feed')" data-post-id="${p.id}">
+        <div class="insta-grid-text-content">${p.content}</div>
+        <div class="insta-grid-overlay">
+          <div class="insta-grid-stat">❤️ ${p.likes||0}</div>
+        </div>
+      </div>`).join('') + '</div>';
+
+  } else if (tab === 'fotos') {
+    const { data } = await sb.from('posts').select('*').eq('user_id', currentUser.id).eq('media_type','image').order('created_at', {ascending:false});
+    if (!data || !data.length) {
+      container.innerHTML = '<div class="insta-empty-grid"><div class="insta-empty-icon">📷</div><div class="insta-empty-title">Nenhuma foto ainda</div><p style="font-size:13px;color:var(--muted);">Publique sua primeira foto!</p></div>';
+      return;
+    }
+    container.innerHTML = '<div class="insta-grid">' + data.map(p => `
+      <div class="insta-grid-item" onclick="openLightbox('${p.media_url}')">
+        <img src="${p.media_url}" loading="lazy">
+        <div class="insta-grid-overlay">
+          <div class="insta-grid-stat">❤️ ${p.likes||0}</div>
+        </div>
+      </div>`).join('') + '</div>';
+
+  } else if (tab === 'reels') {
+    const { data } = await sb.from('posts').select('*').eq('user_id', currentUser.id).eq('media_type','video').order('created_at', {ascending:false});
+    if (!data || !data.length) {
+      container.innerHTML = '<div class="insta-empty-grid"><div class="insta-empty-icon">🎥</div><div class="insta-empty-title">Nenhum reel ainda</div><p style="font-size:13px;color:var(--muted);">Publique seu primeiro vídeo!</p></div>';
+      return;
+    }
+    container.innerHTML = '<div class="insta-grid">' + data.map(p => `
+      <div class="insta-grid-item" onclick="goPage('reels');setBottomNav('reels')">
+        <video src="${p.media_url}" muted playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+        <div class="insta-grid-overlay">
+          <div class="insta-grid-stat">▶ Reel</div>
+          <div class="insta-grid-stat">❤️ ${p.likes||0}</div>
+        </div>
+      </div>`).join('') + '</div>';
+  }
+}
+
+function openEditProfileSheet() {
+  const sheet = document.getElementById('edit-profile-sheet');
+  if (sheet) sheet.style.display = 'flex';
+}
+
+function closeEditProfileSheet() {
+  const sheet = document.getElementById('edit-profile-sheet');
+  if (sheet) sheet.style.display = 'none';
+}
+
+async function saveProfileNew() {
+  const btn = document.querySelector('.edit-profile-save');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+  const updates = {
+    full_name: document.getElementById('edit2-nome')?.value.trim(),
+    empresa: document.getElementById('edit2-empresa')?.value.trim(),
+    setor: document.getElementById('edit2-setor')?.value,
+    cidade: document.getElementById('edit2-cidade')?.value.trim(),
+    bio: document.getElementById('edit2-bio')?.value.trim(),
+    link: document.getElementById('edit2-link')?.value.trim(),
+  };
+  const { error } = await sb.auth.updateUser({ data: updates });
+  if (error) { toast('Erro: ' + error.message, 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; } return; }
+  await sb.from('profiles').upsert({
+    id: currentUser.id,
+    nome: updates.full_name,
+    empresa: updates.empresa,
+    setor: updates.setor,
+    cidade: updates.cidade,
+    bio: updates.bio,
+    email: currentUser.email,
+    avatar_url: currentUser.user_metadata?.avatar_url || ''
+  });
+  if (btn) { btn.disabled = false; btn.textContent = 'Salvar'; }
+  closeEditProfileSheet();
+  toast('Perfil atualizado! ✅', 'success');
+  const { data: { user } } = await sb.auth.getUser();
+  currentUser = user;
+  await loadInstagramProfile();
+}
+
+async function uploadAvatarEdit(input) {
+  const file = input.files[0];
+  if (!file) return;
+  toast('Enviando foto...', 'success');
+  const ext = file.name.split('.').pop();
+  const path = currentUser.id + '/avatar.' + ext;
+  await sb.storage.from('avatars').upload(path, file, { upsert: true });
+  const { data } = sb.storage.from('avatars').getPublicUrl(path);
+  const avatarUrl = data.publicUrl + '?t=' + Date.now();
+  await sb.auth.updateUser({ data: { avatar_url: avatarUrl } });
+  await sb.from('profiles').upsert({ id: currentUser.id, avatar_url: avatarUrl });
+  const editAv = document.getElementById('edit-av-preview');
+  if (editAv) editAv.innerHTML = '<img src="' + avatarUrl + '">';
+  setAvatarUrl(avatarUrl);
+  toast('Foto atualizada! ✅', 'success');
+}
+
 // ===== MOBILE NAV =====
 function setBottomNav(page) {
 document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
@@ -3156,7 +3455,7 @@ console.log('Realtime feed status:', status);
 }
 
 // ===== NAVIGATION =====
-const pageTitles = { feed:'Feed de Negócios', reels:'Reels', grupos:'Grupos', opor:'Oportunidades', 'meu-perfil':'Meu Perfil', msgs:'Mensagens', admin:'Painel Admin', 'pub-perfil':'Perfil', busca:'Buscar' };
+const pageTitles = { feed:'Feed de Negócios', reels:'Reels', grupos:'Grupos', opor:'Oportunidades', 'meu-perfil':'Perfil', msgs:'Mensagens', admin:'Painel Admin', 'pub-perfil':'Perfil', busca:'Buscar' };
 
 function goPage(p) {
 document.querySelectorAll('.page').forEach(el => { el.classList.remove('active'); el.style.display = 'none'; });
@@ -3171,6 +3470,7 @@ if (p === 'msgs' && currentUser) loadConversations();
 if (p === 'admin' && isAdmin) loadAdminData();
 if (p === 'busca') loadBuscaInicial();
 if (p === 'reels') loadReels();
+if (p === 'meu-perfil' && currentUser) loadInstagramProfile();
 // Show/hide back button
 const backBtn = document.getElementById('topbar-back');
 if (backBtn) backBtn.style.display = p === 'pub-perfil' ? 'flex' : 'none';
